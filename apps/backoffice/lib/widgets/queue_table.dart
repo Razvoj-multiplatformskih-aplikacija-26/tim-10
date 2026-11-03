@@ -3,16 +3,18 @@ import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:ui/ui.dart';
 
+import 'queue_rows.dart';
 import 'review_text.dart';
 
 /// The wide layout of the queue: one proposal per row.
 class QueueTable extends StatelessWidget {
-  const QueueTable({super.key, required this.state, required this.now, required this.onOpen});
+  const QueueTable({super.key, required this.state, required this.now, required this.focusNode, required this.onOpen});
 
   static const rowHeight = 56.0;
 
   final ReviewQueueLoaded state;
   final DateTime now;
+  final FocusNode focusNode;
   final ValueChanged<EntryId> onOpen;
 
   @override
@@ -22,12 +24,24 @@ class QueueTable extends StatelessWidget {
         const _HeaderRow(),
         const Divider(height: 1),
         Expanded(
-          child: ListView.builder(
-            itemExtent: rowHeight,
-            itemCount: state.items.length,
-            itemBuilder: (context, index) {
+          child: QueueRows(
+            count: state.items.length,
+            cursor: state.cursor,
+            rowHeight: rowHeight,
+            focusNode: focusNode,
+            rowBuilder: (context, index, hasFocus) {
               final item = state.items[index];
-              return _Row(key: ValueKey(item.id.value), item: item, now: now, onTap: () => onOpen(item.id));
+              final isCursor = index == state.cursor;
+              return Container(
+                key: ValueKey(item.id.value),
+                decoration: queueRowDecoration(
+                  context,
+                  isCursor: isCursor,
+                  isOpen: isCursor && state.isPanelOpen,
+                  hasFocus: hasFocus,
+                ),
+                child: _Row(item: item, now: now, onTap: () => onOpen(item.id)),
+              );
             },
           ),
         ),
@@ -71,7 +85,7 @@ class _HeaderRow extends StatelessWidget {
 }
 
 class _Row extends StatelessWidget {
-  const _Row({super.key, required this.item, required this.now, required this.onTap});
+  const _Row({required this.item, required this.now, required this.onTap});
 
   final ReviewItem item;
   final DateTime now;
@@ -80,6 +94,7 @@ class _Row extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
+      canRequestFocus: false, // the keyboard moves the cursor with the arrows, Tab does not stop on every row
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: AppSpace.screen),
