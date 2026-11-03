@@ -23,6 +23,26 @@ String servingsText(int servings) => switch (servings) {
   _ => '$servings porcija',
 };
 
+/// "paradajz, 400 g" or just "so" for "to taste".
+String ingredientText(Ingredient ingredient) => switch (ingredient.quantity) {
+  null => ingredient.name,
+  final quantity => '${ingredient.name}, ${_amountText(quantity.amount)} ${_unitText(quantity.unit)}',
+};
+
+/// A whole number without ".0"; on the web and on the phone the same text.
+String _amountText(double amount) => amount == amount.roundToDouble() ? amount.toInt().toString() : amount.toString();
+
+String _unitText(Unit unit) => switch (unit) {
+  Unit.g => 'g',
+  Unit.kg => 'kg',
+  Unit.ml => 'ml',
+  Unit.l => 'l',
+  Unit.piece => 'kom',
+  Unit.tbsp => 'kaš.',
+  Unit.tsp => 'kašič.',
+  Unit.cup => 'šolja',
+};
+
 /// The name on the card and at the top of the detail. Before the analysis there is no name yet, so it says what is
 /// going on with the video.
 String entryTitle(Entry entry) => switch (entry.content) {

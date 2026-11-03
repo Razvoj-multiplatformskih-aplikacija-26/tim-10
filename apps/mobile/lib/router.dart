@@ -1,12 +1,17 @@
+import 'package:domain/domain.dart';
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
+import 'screens/entry_detail_screen.dart';
 import 'screens/home_shell.dart';
 import 'screens/later_screen.dart';
 import 'screens/library_screen.dart';
 
 const libraryPath = '/entries';
 const addVideoPath = '/entries/new';
+
+/// The address of one entry: `/entries/d-saved`.
+String entryPath(EntryId id) => '$libraryPath/${id.value}';
 
 GoRouter buildRouter({String initialLocation = libraryPath}) {
   final rootKey = GlobalKey<NavigatorState>();
@@ -19,7 +24,19 @@ GoRouter buildRouter({String initialLocation = libraryPath}) {
         builder: (context, state, shell) => HomeShell(shell: shell),
         branches: [
           StatefulShellBranch(
-            routes: [GoRoute(path: libraryPath, builder: (context, state) => const LibraryScreen())],
+            routes: [
+              GoRoute(
+                path: libraryPath,
+                builder: (context, state) => const LibraryScreen(),
+                routes: [
+                  GoRoute(
+                    path: ':id',
+                    parentNavigatorKey: rootKey,
+                    builder: (context, state) => EntryDetailScreen(id: EntryId(state.pathParameters['id']!)),
+                  ),
+                ],
+              ),
+            ],
           ),
           StatefulShellBranch(
             routes: [
