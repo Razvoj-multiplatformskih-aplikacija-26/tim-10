@@ -21,8 +21,12 @@ void main() {
   final newer = entry('petar-new', petar, ago: const Duration(hours: 1));
   final anas = entry('ana-1', ana, ago: const Duration(hours: 3));
 
-  FakeEntryRepository repositoryWith({Duration latency = Duration.zero}) =>
-      FakeEntryRepository(seed: [older, anas, newer], latency: latency);
+  FakeEntryRepository repositoryWith({Duration latency = Duration.zero}) => FakeEntryRepository(
+    seed: [older, anas, newer],
+    clock: FixedClock(at),
+    analyzer: FakeVideoAnalyzer(const {}, latency: Duration.zero),
+    latency: latency,
+  );
 
   group('FakeEntryRepository', () {
     test('gives a user only their own entries, newest first', () async {
