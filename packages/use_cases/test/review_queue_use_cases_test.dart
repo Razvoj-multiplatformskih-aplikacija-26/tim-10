@@ -61,4 +61,34 @@ void main() {
       expect(queue.entry(proposalId)?.status, proposal.status);
     });
   });
+
+  group('RejectProposal', () {
+    final reason = RejectionReason.parse('Video nije o hrani.').valueOrNull!;
+
+    test('rejects the proposal with the reason and stores it', () async {
+      final queue = InMemoryReviewQueue([proposal]);
+
+      final result = await RejectProposal(queue: queue, clock: clock)(proposalId, by: editor, reason: reason);
+
+      final rejected = Rejected(by: editor.id, reason: reason, at: at);
+      expect(result.valueOrNull?.status, rejected);
+      expect(queue.entry(proposalId)?.status, rejected);
+    });
+
+    test('says NotFound for a proposal that no longer exists', () async {
+      final queue = InMemoryReviewQueue();
+
+      final result = await RejectProposal(queue: queue, clock: clock)(proposalId, by: editor, reason: reason);
+
+      expect(result, const Failure<Entry>(NotFound()));
+    });
+
+    test('does not let a user reject', () async {
+      final queue = InMemoryReviewQueue([proposal]);
+
+      final result = await RejectProposal(queue: queue, clock: clock)(proposalId, by: ana, reason: reason);
+
+      expect(result, const Failure<Entry>(NotAllowed()));
+    });
+  });
 }

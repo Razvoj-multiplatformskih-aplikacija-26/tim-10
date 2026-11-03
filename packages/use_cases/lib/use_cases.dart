@@ -12,6 +12,7 @@ export 'src/ports/review_queue_repository.dart';
 export 'src/ports/video_analyzer.dart';
 export 'src/propose_entry.dart';
 export 'src/publish_proposal.dart';
+export 'src/reject_proposal.dart';
 export 'src/repository_exception.dart';
 export 'src/retry_analysis.dart';
 export 'src/save_entry.dart';
