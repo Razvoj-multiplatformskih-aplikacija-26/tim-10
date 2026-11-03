@@ -6,8 +6,9 @@ import '../entry/video_link.dart';
 /// R4 (README): the same video is analysed only once, across all users.
 ///
 /// Looks through the entries of every user for a finished analysis of [link] and returns it, so a new user gets a
-/// copy at once (`Queued → AwaitingReview`) without a new analysis and without using the daily limit (R2). Returns
-/// `null` when no one has the whole analysis yet; then the video is analysed.
+/// copy at once (`Queued → AwaitingReview`) without waiting, and the system does not pay for the same analysis
+/// twice. The link still counts toward the user's daily limit (R2 counts the links a user sends). Returns `null` when
+/// no one has the whole analysis yet; then the video is analysed.
 ///
 /// Only the content is copied, never anyone's personal layer. The client uses this as an estimate; the server decides
 /// (KT2), so two users sending the same video at the same moment still start a single analysis.

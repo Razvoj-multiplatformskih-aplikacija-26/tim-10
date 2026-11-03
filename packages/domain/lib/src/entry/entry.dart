@@ -96,8 +96,9 @@ final class Entry {
   final PersonalLayer personal;
   final DateTime createdAt;
 
-  /// When an analysis of this entry was requested: the new link, then every retry. Empty when the result was copied
-  /// from an existing analysis (R4). The daily limit (R2) counts these times.
+  /// Every time the user sent this entry's link to the analysis: the new link, then every retry. The daily limit (R2)
+  /// counts these times, also when the result was copied from an existing analysis (R4): the limit counts the links
+  /// a user sends, so it is the same for everyone and does not depend on what other users saved.
   final List<DateTime> analysisRequests;
 
   /// A change makes a new entry; id, owner, source and creation time never change.
