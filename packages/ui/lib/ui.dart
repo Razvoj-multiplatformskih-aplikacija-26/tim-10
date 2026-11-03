@@ -3,6 +3,7 @@
 /// The only shared package that may import Flutter.
 library;
 
+export 'src/text/domain_errors.dart';
 export 'src/theme/app_colors.dart';
 export 'src/theme/app_icons.dart';
 export 'src/theme/app_radius.dart';

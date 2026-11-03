@@ -77,6 +77,14 @@ void main() {
       expect(items.toSet(), hasLength(3));
     });
 
+    test('the author and the frame of the video are part of the source', () {
+      final withAuthor = FromVideo(link: link, author: '@doruckuj.brzo', thumbnail: 'palacinke');
+
+      expect(withAuthor, FromVideo(link: link, author: '@doruckuj.brzo', thumbnail: 'palacinke'));
+      expect(withAuthor, isNot(FromVideo(link: link, author: '@neko.drugi', thumbnail: 'palacinke')));
+      expect(FromVideo(link: link).author, isNull);
+    });
+
     test('a manual entry has no link', () {
       const EntrySource source = Manual();
 
