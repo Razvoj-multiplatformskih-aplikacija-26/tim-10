@@ -32,13 +32,61 @@ final class EntriesEmpty extends EntriesState {
 }
 
 final class EntriesLoaded extends EntriesState {
-  const EntriesLoaded(this.entries);
+  const EntriesLoaded(this.entries, {this.busyId, this.notice});
 
   final List<Entry> entries;
 
-  @override
-  List<Object?> get props => [entries];
+  /// The entry whose action is running; the screen disables its buttons.
+  final EntryId? busyId;
+
+  /// A one-time message for a SnackBar, shown once and then acknowledged.
+  final EntriesNotice? notice;
+
+  bool get isBusy => busyId != null;
 
   @override
-  String toString() => 'EntriesLoaded(${entries.length} entries)';
+  List<Object?> get props => [entries, busyId, notice];
+
+  @override
+  String toString() =>
+      'EntriesLoaded(${entries.length} entries${isBusy ? ', busy ${busyId!.value}' : ''}'
+      '${notice == null ? '' : ', $notice'})';
+}
+
+/// How an action ended, for one SnackBar.
+sealed class EntriesNotice extends Equatable {
+  const EntriesNotice(this.action);
+
+  final EntryAction action;
+}
+
+/// "Sačuvano", "Predloženo", "Poslato ponovo", "Obrisano".
+final class EntryActionSucceeded extends EntriesNotice {
+  const EntryActionSucceeded(super.action, this.entry);
+
+  final Entry entry;
+
+  @override
+  List<Object?> get props => [action, entry];
+}
+
+/// A rule said no; the screen shows `domainErrorText(error)`.
+final class EntryActionRejected extends EntriesNotice {
+  const EntryActionRejected(super.action, this.error);
+
+  final DomainError error;
+
+  @override
+  List<Object?> get props => [action, error];
+}
+
+/// The data could not be reached; the screen offers "Pokušaj ponovo", which sends the same action for [id].
+final class EntryActionFailed extends EntriesNotice {
+  const EntryActionFailed(super.action, this.id, this.cause);
+
+  final EntryId id;
+  final Object cause;
+
+  @override
+  List<Object?> get props => [action, id, cause];
 }

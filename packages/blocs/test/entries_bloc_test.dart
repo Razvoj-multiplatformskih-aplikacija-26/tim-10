@@ -6,6 +6,7 @@ import 'package:domain/domain.dart';
 import 'package:test/test.dart';
 import 'package:use_cases/use_cases.dart';
 
+import 'support/entries_bloc_for.dart';
 import 'support/in_memory_entry_repository.dart';
 
 void main() {
@@ -19,10 +20,7 @@ void main() {
     createdAt: at,
   );
 
-  EntriesBloc blocWith(EntryRepository repository) => EntriesBloc(
-    loadMyEntries: LoadMyEntries(entries: repository),
-    user: petar,
-  );
+  EntriesBloc blocWith(EntryRepository repository) => entriesBlocFor(repository, user: petar, clock: FixedClock(at));
 
   group('EntriesBloc · four states', () {
     test('starts in loading, so the first frame shows skeleton cards', () {
