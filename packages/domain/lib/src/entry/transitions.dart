@@ -21,10 +21,13 @@ Result<Entry> proposeEntry(Entry entry, {required User by, required DateTime now
 
 /// "Pokušaj ponovo": the owner sends a failed link back to the analysis. `AnalysisFailed → Queued`.
 ///
-/// A retry counts toward the daily limit (R2). The limit depends on all of the user's entries, so it is checked by
-/// the use case or the repository with `remainingAnalyses`, not here.
+/// A retry counts toward the daily limit (R2), so its time is added to [Entry.analysisRequests]. Whether the limit
+/// still allows it depends on all of the user's entries, so the use case checks that first, not this function.
 Result<Entry> retryAnalysis(Entry entry, {required User by, required DateTime now}) =>
-    _moveTo(entry, Queued(at: now.toUtc()), allowed: AccessPolicy.canManage(by, entry));
+    switch (_moveTo(entry, Queued(at: now.toUtc()), allowed: AccessPolicy.canManage(by, entry))) {
+      Success(:final value) => Success(value.copyWith(analysisRequests: [...value.analysisRequests, now.toUtc()])),
+      Failure(:final error) => Failure(error),
+    };
 
 /// "Objavi": an editor accepts a proposal into the catalog. `PendingApproval → Published`.
 ///

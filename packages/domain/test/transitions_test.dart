@@ -104,6 +104,24 @@ void main() {
     });
   });
 
+  group('R2 · retryAnalysis counts as a new analysis request', () {
+    test('adds the time of the retry to the earlier requests', () {
+      final failed = petarsEntry(AnalysisFailed(reason: AnalysisFailure.timeout, at: earlier))
+          .copyWith(analysisRequests: [earlier]);
+
+      final retried = retryAnalysis(failed, by: petar, now: now).valueOrNull;
+
+      expect(retried?.analysisRequests, [earlier, now]);
+    });
+
+    test('adds nothing when the retry is not allowed', () {
+      final saved = petarsEntry(Saved(at: earlier)).copyWith(analysisRequests: [earlier]);
+
+      expect(retryAnalysis(saved, by: petar, now: now).isSuccess, isFalse);
+      expect(saved.analysisRequests, [earlier]);
+    });
+  });
+
   group('R6 · retryAnalysis', () {
     test('sends a failed link back to the queue', () {
       final failed = AnalysisFailed(reason: AnalysisFailure.timeout, at: earlier);
