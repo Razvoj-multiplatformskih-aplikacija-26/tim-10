@@ -14,7 +14,10 @@ class QueueSkeleton extends StatelessWidget {
       itemBuilder: (context, index) => Container(
         height: 40,
         margin: const EdgeInsets.only(bottom: AppSpace.betweenCards),
-        decoration: BoxDecoration(color: AppColors.track, borderRadius: BorderRadius.circular(AppRadius.field)),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(AppRadius.field),
+        ),
       ),
     );
   }

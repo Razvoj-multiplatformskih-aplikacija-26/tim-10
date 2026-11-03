@@ -125,7 +125,10 @@ class _Row extends StatelessWidget {
               width: _duplicatesWidth,
               child: item.duplicates.isEmpty
                   ? const Text('—', style: AppText.body)
-                  : Text('${item.duplicates.length}', style: AppText.cardTitle.copyWith(color: AppColors.tomato)),
+                  : Text(
+                      '${item.duplicates.length}',
+                      style: AppText.cardTitle.copyWith(color: Theme.of(context).colorScheme.error),
+                    ),
             ),
           ],
         ),

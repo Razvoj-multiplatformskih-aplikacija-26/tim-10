@@ -72,7 +72,10 @@ class _Row extends StatelessWidget {
             ),
             if (item.duplicates.isNotEmpty) ...[
               const SizedBox(width: 8),
-              Text('${item.duplicates.length} dupl.', style: AppText.label.copyWith(color: AppColors.tomato)),
+              Text(
+                '${item.duplicates.length} dupl.',
+                style: AppText.label.copyWith(color: Theme.of(context).colorScheme.error),
+              ),
             ],
           ],
         ),
