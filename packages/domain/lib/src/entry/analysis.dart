@@ -15,17 +15,26 @@ import 'video_link.dart';
 /// A failed analysis (not food, unavailable, timeout) is not a result; the `VideoAnalyzer` port reports it.
 @immutable
 final class AnalysisResult {
-  const AnalysisResult({required this.link, required this.items}) : assert(items.length > 0);
+  const AnalysisResult({required this.link, required this.items, this.author, this.thumbnail})
+    : assert(items.length > 0);
 
   final VideoLink link;
   final List<EntryContent> items;
 
-  @override
-  bool operator ==(Object other) =>
-      other is AnalysisResult && other.link == link && const ListEquality<EntryContent>().equals(other.items, items);
+  /// Who posted the video, and a frame of it; every entry made from this result gets them (see [FromVideo]).
+  final String? author;
+  final String? thumbnail;
 
   @override
-  int get hashCode => Object.hash(link, Object.hashAll(items));
+  bool operator ==(Object other) =>
+      other is AnalysisResult &&
+      other.link == link &&
+      const ListEquality<EntryContent>().equals(other.items, items) &&
+      other.author == author &&
+      other.thumbnail == thumbnail;
+
+  @override
+  int get hashCode => Object.hash(link, Object.hashAll(items), author, thumbnail);
 }
 
 /// README: "if a video has several items, each becomes its own entry".
@@ -49,7 +58,13 @@ Result<List<Entry>> entriesFromAnalysis(
       Entry(
         id: i == 0 ? queued.id : newId(i),
         owner: queued.owner,
-        source: FromVideo(link: result.link, itemIndex: i, itemCount: count),
+        source: FromVideo(
+          link: result.link,
+          itemIndex: i,
+          itemCount: count,
+          author: result.author,
+          thumbnail: result.thumbnail,
+        ),
         status: next,
         createdAt: queued.createdAt,
         content: result.items[i],

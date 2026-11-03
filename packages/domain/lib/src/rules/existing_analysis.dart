@@ -15,18 +15,25 @@ import '../entry/video_link.dart';
 AnalysisResult? existingAnalysisFor(VideoLink link, List<Entry> all) {
   final items = <int, EntryContent>{};
   int? itemCount;
+  FromVideo? video; // any item of the video, for its author and frame
 
   for (final entry in all) {
     final content = entry.content; // null while queued, analysing or failed
     if (content == null) continue;
-    if (entry.source case FromVideo(link: final entryLink, :final itemIndex, itemCount: final count)
-        when entryLink == link) {
-      items.putIfAbsent(itemIndex, () => content);
-      itemCount = count;
+    final source = entry.source;
+    if (source is FromVideo && source.link == link) {
+      items.putIfAbsent(source.itemIndex, () => content);
+      itemCount = source.itemCount;
+      video ??= source;
     }
   }
 
   // Every item must be there: someone may have deleted one of theirs, and nobody else may have it.
   if (itemCount == null || items.length != itemCount) return null;
-  return AnalysisResult(link: link, items: [for (var i = 0; i < itemCount; i++) items[i]!]);
+  return AnalysisResult(
+    link: link,
+    items: [for (var i = 0; i < itemCount; i++) items[i]!],
+    author: video?.author,
+    thumbnail: video?.thumbnail,
+  );
 }

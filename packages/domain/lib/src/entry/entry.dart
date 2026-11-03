@@ -15,18 +15,30 @@ sealed class EntrySource {
 /// [itemIndex] 0, 1 and 2 of [itemCount] 3 (README: "each item becomes its own entry").
 @immutable
 final class FromVideo extends EntrySource {
-  const FromVideo({required this.link, this.itemIndex = 0, this.itemCount = 1});
+  const FromVideo({required this.link, this.itemIndex = 0, this.itemCount = 1, this.author, this.thumbnail});
 
   final VideoLink link;
   final int itemIndex;
   final int itemCount;
 
-  @override
-  bool operator ==(Object other) =>
-      other is FromVideo && other.link == link && other.itemIndex == itemIndex && other.itemCount == itemCount;
+  /// Who posted the video ("@doruckuj.brzo"), shown at the bottom of the card; `null` until it is known.
+  final String? author;
+
+  /// A frame of the video for the card: in KT1 the name of a demo photo, from KT2 an address the server gives.
+  /// Without it the card shows an illustration of the kind.
+  final String? thumbnail;
 
   @override
-  int get hashCode => Object.hash(link, itemIndex, itemCount);
+  bool operator ==(Object other) =>
+      other is FromVideo &&
+      other.link == link &&
+      other.itemIndex == itemIndex &&
+      other.itemCount == itemCount &&
+      other.author == author &&
+      other.thumbnail == thumbnail;
+
+  @override
+  int get hashCode => Object.hash(link, itemIndex, itemCount, author, thumbnail);
 }
 
 /// Typed in by the user (after KT1).

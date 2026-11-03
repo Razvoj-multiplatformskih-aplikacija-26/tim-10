@@ -32,6 +32,31 @@ void main() {
       expect(existingAnalysisFor(video, anasEntries(video)), AnalysisResult(link: video, items: items));
     });
 
+    test('the copy keeps the author and the frame of the video', () {
+      final withAuthor = [
+        for (final e in anasEntries(video))
+          Entry(
+            id: e.id,
+            owner: e.owner,
+            source: FromVideo(
+              link: video,
+              itemIndex: (e.source as FromVideo).itemIndex,
+              itemCount: items.length,
+              author: '@doruckuj.brzo',
+              thumbnail: 'palacinke',
+            ),
+            status: e.status,
+            createdAt: e.createdAt,
+            content: e.content,
+          ),
+      ];
+
+      final existing = existingAnalysisFor(video, withAuthor)!;
+
+      expect(existing.author, '@doruckuj.brzo');
+      expect(existing.thumbnail, 'palacinke');
+    });
+
     test('recognises the same video written differently', () {
       final sameVideo = linkOf('instagram.com/reel/C8xYz12AbC?igsh=abc');
 

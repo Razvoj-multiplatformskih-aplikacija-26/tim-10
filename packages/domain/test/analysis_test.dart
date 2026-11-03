@@ -58,6 +58,28 @@ void main() {
       expect(remainingAnalyses(entries, now: now), dailyAnalysisLimit - 1);
     });
 
+    test('every item gets the author and the frame of the video', () {
+      final result = AnalysisResult(
+        link: link,
+        items: breakfast.items,
+        author: '@doruckuj.brzo',
+        thumbnail: 'palacinke',
+      );
+
+      final entries = entriesFromAnalysis(
+        waiting(Queued(at: submittedAt)),
+        result,
+        now: now,
+        newId: (i) => EntryId('e-1-$i'),
+      ).valueOrNull!;
+
+      for (final entry in entries) {
+        final source = entry.source as FromVideo;
+        expect(source.author, '@doruckuj.brzo');
+        expect(source.thumbnail, 'palacinke');
+      }
+    });
+
     test('an entry that is not waiting for the analysis cannot take a result', () {
       final saved = waiting(Saved(at: submittedAt));
 
