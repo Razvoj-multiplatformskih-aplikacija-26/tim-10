@@ -21,7 +21,9 @@ void main() {
   FakeEntryRepository repositoryWith(List<Entry> seed) => FakeEntryRepository(
     seed: seed,
     clock: clock,
-    analyzer: FakeVideoAnalyzer({breakfast: breakfastItems}, latency: Duration.zero),
+    analyzer: FakeVideoAnalyzer({
+      breakfast: AnalysisResult(link: breakfast, items: breakfastItems),
+    }, latency: Duration.zero),
     latency: Duration.zero,
   );
 

@@ -75,7 +75,7 @@ void main() {
     final unknown = VideoLink.parse('https://www.tiktok.com/@neko/video/1234567890').valueOrNull!;
     const recipe = RecipeContent(title: 'Palačinke', ingredients: [], steps: [], servings: 4);
     final analyzer = FakeVideoAnalyzer({
-      known: [recipe],
+      known: AnalysisResult(link: known, items: const [recipe]),
     }, latency: Duration.zero);
 
     test('a known video gives its prepared items', () async {
