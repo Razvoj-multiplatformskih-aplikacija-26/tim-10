@@ -1,7 +1,11 @@
+import 'package:blocs/blocs.dart';
 import 'package:domain/domain.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import 'dependencies.dart';
+import 'screens/add_video_screen.dart';
 import 'screens/entry_detail_screen.dart';
 import 'screens/home_shell.dart';
 import 'screens/later_screen.dart';
@@ -29,6 +33,17 @@ GoRouter buildRouter({String initialLocation = libraryPath}) {
                 path: libraryPath,
                 builder: (context, state) => const LibraryScreen(),
                 routes: [
+                  // Before ':id', or "new" would be read as the id of an entry.
+                  GoRoute(
+                    path: 'new',
+                    parentNavigatorKey: rootKey,
+                    builder: (context, state) => BlocProvider(
+                      // A local Bloc: it is created with the form and closes with it.
+                      create: (context) =>
+                          context.read<AppDependencies>().submitLinkBloc()..add(const SubmitLinkOpened()),
+                      child: const AddVideoScreen(),
+                    ),
+                  ),
                   GoRoute(
                     path: ':id',
                     parentNavigatorKey: rootKey,
