@@ -7,6 +7,7 @@ import 'package:ui/ui.dart';
 
 import '../router.dart';
 import '../widgets/debug_menu.dart';
+import '../widgets/entry_notices.dart';
 import '../widgets/entry_text.dart';
 import '../widgets/entry_tile.dart';
 
@@ -20,30 +21,33 @@ class LibraryScreen extends StatelessWidget {
     return Scaffold(
       body: SafeArea(
         bottom: false,
-        child: BlocBuilder<EntriesBloc, EntriesState>(
-          builder: (context, state) => switch (state) {
-            EntriesLoading() => const _Loading(),
-            EntriesFailure() => _Message(
-              child: ErrorState(
-                title: 'Biblioteka se nije učitala',
-                message: 'Server trenutno ne odgovara. Tvoji unosi nisu izgubljeni, samo ih sada ne možemo prikazati.',
-                hint: 'Ako se ponavlja, proveri internet vezu.',
-                onRetry: () => context.read<EntriesBloc>().add(const EntriesRequested()),
+        child: EntryNotices(
+          child: BlocBuilder<EntriesBloc, EntriesState>(
+            builder: (context, state) => switch (state) {
+              EntriesLoading() => const _Loading(),
+              EntriesFailure() => _Message(
+                child: ErrorState(
+                  title: 'Biblioteka se nije učitala',
+                  message:
+                      'Server trenutno ne odgovara. Tvoji unosi nisu izgubljeni, samo ih sada ne možemo prikazati.',
+                  hint: 'Ako se ponavlja, proveri internet vezu.',
+                  onRetry: () => context.read<EntriesBloc>().add(const EntriesRequested()),
+                ),
               ),
-            ),
-            EntriesEmpty() => _Message(
-              child: EmptyState(
-                title: 'Podeli prvi video sa hranom',
-                message:
-                    'Recept ili restoran iz Instagrama ili TikToka postaje unos koji možeš da pretražiš, skuvaš '
-                    'ili posetiš.',
-                actions: [
-                  PrimaryButton(label: 'Dodaj link', icon: AppIcons.add, onPressed: () => context.push(addVideoPath)),
-                ],
+              EntriesEmpty() => _Message(
+                child: EmptyState(
+                  title: 'Podeli prvi video sa hranom',
+                  message:
+                      'Recept ili restoran iz Instagrama ili TikToka postaje unos koji možeš da pretražiš, skuvaš '
+                      'ili posetiš.',
+                  actions: [
+                    PrimaryButton(label: 'Dodaj link', icon: AppIcons.add, onPressed: () => context.push(addVideoPath)),
+                  ],
+                ),
               ),
-            ),
-            EntriesLoaded() => _Loaded(state: state),
-          },
+              EntriesLoaded() => _Loaded(state: state),
+            },
+          ),
         ),
       ),
     );
@@ -176,11 +180,37 @@ class _Loaded extends StatelessWidget {
           for (final entry in visible)
             Padding(
               padding: const EdgeInsets.fromLTRB(AppSpace.screen, 0, AppSpace.screen, AppSpace.betweenCards),
-              child: EntryTile(key: ValueKey(entry.id.value), entry: entry),
+              child: EntryTile(
+                key: ValueKey(entry.id.value),
+                entry: entry,
+                actions: _cardActions(context, entry),
+                onTap: () => context.push(entryPath(entry.id)),
+              ),
             ),
         ],
       ),
     );
+  }
+
+  /// The one thing an entry waits for: saving a result, or trying a failed link again. The rest is on the detail.
+  Widget? _cardActions(BuildContext context, Entry entry) {
+    final allowed = state.actionsFor(entry.id);
+    void run(EntryAction action) => context.read<EntriesBloc>().add(EntryActionRequested(action, entry.id));
+    if (allowed.contains(EntryAction.save)) {
+      return PrimaryButton(
+        label: 'Sačuvaj',
+        size: ButtonSize.sm,
+        onPressed: state.isBusy ? null : () => run(EntryAction.save),
+      );
+    }
+    if (allowed.contains(EntryAction.retry)) {
+      return GhostButton(
+        label: 'Pokušaj ponovo',
+        size: ButtonSize.sm,
+        onPressed: state.isBusy ? null : () => run(EntryAction.retry),
+      );
+    }
+    return null;
   }
 
   int? _countOrNull(StatusFilter chip) {
