@@ -292,6 +292,7 @@ class _RecipeTab extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const _Heading('Sastojci'),
+        if (recipe.ingredients.isEmpty) Text('U videu nisu navedene količine.', style: body),
         for (final ingredient in recipe.ingredients) Text('• ${ingredientText(ingredient)}', style: body),
         const SizedBox(height: 16),
         const _Heading('Koraci'),
