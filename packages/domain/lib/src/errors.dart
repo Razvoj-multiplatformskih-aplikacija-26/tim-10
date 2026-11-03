@@ -11,7 +11,12 @@ final class InvalidLink extends DomainError {
   const InvalidLink();
 }
 
-/// R1: the text is a link, but not to an Instagram or TikTok video.
+/// R1: the link is not from Instagram or TikTok.
 final class UnsupportedPlatform extends DomainError {
   const UnsupportedPlatform();
+}
+
+/// R1: an Instagram or TikTok link, but not to a single video (a profile, the home page, ...).
+final class NotAVideoLink extends DomainError {
+  const NotAVideoLink();
 }
