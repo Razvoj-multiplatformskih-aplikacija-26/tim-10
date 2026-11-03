@@ -32,14 +32,11 @@ class QueueTable extends StatelessWidget {
             rowBuilder: (context, index, hasFocus) {
               final item = state.items[index];
               final isCursor = index == state.cursor;
-              return Container(
+              return QueueRowFrame(
                 key: ValueKey(item.id.value),
-                decoration: queueRowDecoration(
-                  context,
-                  isCursor: isCursor,
-                  isOpen: isCursor && state.isPanelOpen,
-                  hasFocus: hasFocus,
-                ),
+                isCursor: isCursor,
+                isOpen: isCursor && state.isPanelOpen,
+                hasFocus: hasFocus,
                 child: _Row(item: item, now: now, onTap: () => onOpen(item.id)),
               );
             },

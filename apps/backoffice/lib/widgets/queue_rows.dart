@@ -84,16 +84,32 @@ class _QueueRowsState extends State<QueueRows> {
   }
 }
 
-/// The look of a row, the same in the table and the list: tinted when open, framed when under a focused cursor.
-BoxDecoration queueRowDecoration(
-  BuildContext context, {
-  required bool isCursor,
-  required bool isOpen,
-  required bool hasFocus,
-}) {
-  final colors = Theme.of(context).colorScheme;
-  return BoxDecoration(
-    color: isOpen ? colors.surfaceContainerHighest : null,
-    border: isCursor && hasFocus ? Border.all(color: colors.onSurface, width: 2) : null,
-  );
+/// One row of the table or the list: tinted when open, framed when under a focused cursor.
+///
+/// The frame is drawn over the row, not around it, so the text does not jump when the cursor arrives.
+class QueueRowFrame extends StatelessWidget {
+  const QueueRowFrame({
+    super.key,
+    required this.isCursor,
+    required this.isOpen,
+    required this.hasFocus,
+    required this.child,
+  });
+
+  final bool isCursor;
+  final bool isOpen;
+  final bool hasFocus;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Container(
+      color: isOpen ? colors.surfaceContainerHighest : null,
+      foregroundDecoration: isCursor && hasFocus
+          ? BoxDecoration(border: Border.all(color: colors.onSurface, width: 2))
+          : null,
+      child: child,
+    );
+  }
 }
