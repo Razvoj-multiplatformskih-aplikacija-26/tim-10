@@ -6,6 +6,7 @@ import 'package:ui/ui.dart';
 
 import '../router.dart';
 import '../widgets/debug_menu.dart';
+import '../widgets/entry_tile.dart';
 
 /// M-03, the start screen. It only draws the state of the Bloc and sends events; the four states are a `switch`
 /// without `default`, so a new state cannot be forgotten.
@@ -127,7 +128,7 @@ class _Loaded extends StatelessWidget {
           for (final entry in state.visible)
             Padding(
               padding: const EdgeInsets.fromLTRB(AppSpace.screen, 0, AppSpace.screen, AppSpace.betweenCards),
-              child: Text(entry.id.value),
+              child: EntryTile(key: ValueKey(entry.id.value), entry: entry),
             ),
         ],
       ),

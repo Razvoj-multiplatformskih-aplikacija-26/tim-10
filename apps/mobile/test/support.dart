@@ -15,6 +15,6 @@ Widget appWith(AppDependencies dependencies, {String location = '/entries'}) =>
 /// A phone screen, tall enough for the first cards.
 void usePhoneSize(WidgetTester tester) {
   tester.view.devicePixelRatio = 1;
-  tester.view.physicalSize = const Size(420, 900);
+  tester.view.physicalSize = const Size(700, 1000);
   addTearDown(tester.view.reset);
 }

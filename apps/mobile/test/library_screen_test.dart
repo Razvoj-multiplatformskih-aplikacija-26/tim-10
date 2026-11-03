@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/data/seed.dart';
 
 import 'support.dart';
 
@@ -69,6 +70,28 @@ void main() {
       await choose(tester, 'Osveži');
 
       expect(find.text('Podeli prvi video sa hranom'), findsOneWidget);
+    });
+  });
+
+  group('the cards', () {
+    testWidgets('the seed shows at least ten entries, in every state', (tester) async {
+      final entries = demoEntries(testNow);
+
+      expect(entries.where((entry) => entry.owner == demoUser.id).length, greaterThanOrEqualTo(10));
+      expect(entries.map((entry) => entry.status.runtimeType).toSet().length, 8);
+    });
+
+    testWidgets('a card shows the name and the state of the entry', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(700, 4000);
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(appWith(fakeDependencies()));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Za pregled'), findsWidgets);
+      expect(find.text('Čeka analizu'), findsWidgets);
+      expect(find.text('Izdvajamo recept iz videa'), findsOneWidget);
     });
   });
 }
