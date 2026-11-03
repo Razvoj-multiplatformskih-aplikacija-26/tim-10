@@ -4,6 +4,7 @@
 library;
 
 export 'src/entry/access_policy.dart';
+export 'src/entry/analysis.dart';
 export 'src/entry/deletion.dart';
 export 'src/entry/entry.dart';
 export 'src/entry/entry_content.dart';
