@@ -76,7 +76,14 @@ void main() {
       expect(remainingAnalyses([retriedTwice], now: now), 17);
     });
 
-    test('an entry copied from an existing analysis (R4) costs nothing', () {
+    test('a link whose result was copied from an existing analysis (R4) still counts', () {
+      // The repository records the request for every link sent, copied or not.
+      final copied = entryWith([now.subtract(const Duration(minutes: 30))]);
+
+      expect(remainingAnalyses([...recentEntries(19), copied], now: now), 0);
+    });
+
+    test('an entry without requests (typed in by hand) costs nothing', () {
       expect(remainingAnalyses([...recentEntries(19), entryWith([])], now: now), 1);
     });
 

@@ -76,13 +76,14 @@ void main() {
       expect(existingAnalysisFor(video, mixed)?.items, items);
     });
 
-    test('the whole flow: Petar gets a copy of all items, free of charge and without Ana\'s notes', () {
+    test('the whole flow: Petar gets a copy of all items at once, without Ana\'s notes, as one of his links', () {
       final petarsLink = Entry(
         id: const EntryId('petar-1'),
         owner: const UserId('u-petar'),
         source: FromVideo(link: video),
         status: Queued(at: now),
         createdAt: now,
+        analysisRequests: [now],
       );
 
       final existing = existingAnalysisFor(video, anasEntries(video))!;
@@ -96,7 +97,8 @@ void main() {
       expect(petars.map((e) => e.content), items);
       expect(petars.map((e) => e.owner).toSet(), {const UserId('u-petar')});
       expect(petars.map((e) => e.personal).toSet(), {const PersonalLayer()});
-      expect(remainingAnalyses(petars, now: now), dailyAnalysisLimit);
+      // R2 counts the link Petar sent, once, even though no new analysis ran.
+      expect(remainingAnalyses(petars, now: now), dailyAnalysisLimit - 1);
     });
   });
 }
