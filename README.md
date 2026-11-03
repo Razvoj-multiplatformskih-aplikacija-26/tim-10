@@ -32,3 +32,24 @@ Unosi koje korisnici predloze i urednici odobre cine zajednicki javni katalog re
 | Javni veb | svi posetioci | Jaspr | pregledac |
 | Server | ostali delovi sistema | Relic, PostgreSQL | Linux, Windows |
 | Domenski paket | svi delovi sistema | Dart | sve |
+
+## Backoffice
+
+Red predloga za urednike: tabela na širokom prozoru, lista ispod 840 px, detalj u panelu.
+Otvoren predlog je u adresi (`/queue?entry=p-3`), pa preživljava osvežavanje stranice.
+
+```bash
+cd apps/backoffice
+flutter run -d macos   # ili -d windows, -d chrome
+```
+
+| Taster | Radnja |
+| --- | --- |
+| ↑ ↓ | kretanje kroz red |
+| Enter | otvori predlog |
+| Esc | zatvori panel |
+| O | objavi |
+| X | odbij, uz razlog |
+| ? | pregled prečica |
+
+U debug režimu meni „Još” (gore desno) ima „Simuliraj grešku” i „Prazan odgovor”, a posle njih ide „Osveži”.
