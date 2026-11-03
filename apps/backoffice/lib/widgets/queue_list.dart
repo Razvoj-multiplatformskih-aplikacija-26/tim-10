@@ -61,10 +61,14 @@ class _Row extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(titleOf(item.content), style: AppText.cardTitle, overflow: TextOverflow.ellipsis),
+                  Text(
+                    titleOf(item.content),
+                    style: Theme.of(context).textTheme.titleMedium,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   Text(
                     '${summaryOf(item.content)}, ${item.proposedBy.value}, ${agoText(item.submittedAt, now: now)}',
-                    style: AppText.body.copyWith(color: secondary),
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: secondary),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
@@ -72,7 +76,10 @@ class _Row extends StatelessWidget {
             ),
             if (item.duplicates.isNotEmpty) ...[
               const SizedBox(width: 8),
-              Text('${item.duplicates.length} dupl.', style: AppText.label.copyWith(color: AppColors.tomato)),
+              Text(
+                '${item.duplicates.length} dupl.',
+                style: AppText.label.copyWith(color: Theme.of(context).colorScheme.error),
+              ),
             ],
           ],
         ),

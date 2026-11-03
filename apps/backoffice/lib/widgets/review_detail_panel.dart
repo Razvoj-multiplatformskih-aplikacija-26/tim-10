@@ -43,13 +43,17 @@ class ReviewDetailPanel extends StatelessWidget {
             ),
           ],
         ),
-        Text(titleOf(item.content), style: AppText.stateTitle),
+        Text(titleOf(item.content), style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: 6),
         Text(
           'Predložio ${item.proposedBy.value}, ${agoText(item.submittedAt, now: now)}',
-          style: AppText.body.copyWith(color: secondary),
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: secondary),
         ),
-        Text(_sourceText(item.source), style: AppText.body.copyWith(color: secondary)),
+        Text(_sourceText(item.source), style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: secondary)),
+        Text(
+          'Lični podaci korisnika nisu vidljivi uredniku',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: secondary),
+        ),
         const SizedBox(height: 16),
         ...switch (item.content) {
           final RecipeContent recipe => _recipe(recipe),
@@ -80,20 +84,20 @@ class ReviewDetailPanel extends StatelessWidget {
   }
 
   List<Widget> _recipe(RecipeContent recipe) => [
-    Text(summaryOf(recipe), style: AppText.body),
+    Text(summaryOf(recipe)),
     const _Heading('Sastojci'),
-    for (final ingredient in recipe.ingredients) Text('• ${_ingredientText(ingredient)}', style: AppText.body),
+    for (final ingredient in recipe.ingredients) Text('• ${_ingredientText(ingredient)}'),
     const _Heading('Koraci'),
-    for (final (index, step) in recipe.steps.indexed) Text('${index + 1}. $step', style: AppText.body),
+    for (final (index, step) in recipe.steps.indexed) Text('${index + 1}. $step'),
   ];
 
   List<Widget> _restaurant(RestaurantContent restaurant) => [
-    Text('${restaurant.location.address}, ${restaurant.location.city}', style: AppText.body),
-    Text('Kuhinja: ${restaurant.cuisine}', style: AppText.body),
-    if (restaurant.priceRange case final price?) Text('Cene: ${_priceText(price)}', style: AppText.body),
+    Text('${restaurant.location.address}, ${restaurant.location.city}'),
+    Text('Kuhinja: ${restaurant.cuisine}'),
+    if (restaurant.priceRange case final price?) Text('Cene: ${_priceText(price)}'),
     const _Heading('Preporučena jela'),
-    for (final dish in restaurant.recommendedDishes) Text('• $dish', style: AppText.body),
-    if (restaurant.notes case final notes?) ...[const _Heading('Napomena'), Text(notes, style: AppText.body)],
+    for (final dish in restaurant.recommendedDishes) Text('• $dish'),
+    if (restaurant.notes case final notes?) ...[const _Heading('Napomena'), Text(notes)],
     if (item.duplicates.isNotEmpty) ...[
       _Heading('Mogući duplikati u katalogu (${item.duplicates.length})'),
       for (final match in item.duplicates) _DuplicateRow(proposal: restaurant, match: match),
@@ -109,7 +113,7 @@ class _Heading extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(top: 16, bottom: 6),
-    child: Text(text, style: AppText.cardTitle),
+    child: Text(text, style: Theme.of(context).textTheme.titleMedium),
   );
 }
 
@@ -146,9 +150,9 @@ class _Place extends StatelessWidget {
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Text(label, style: AppText.label.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-      Text(place.name, style: AppText.body.copyWith(fontWeight: FontWeight.w600)),
-      Text(place.location.address, style: AppText.body),
-      Text(place.cuisine, style: AppText.body),
+      Text(place.name, style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
+      Text(place.location.address),
+      Text(place.cuisine),
     ],
   );
 }

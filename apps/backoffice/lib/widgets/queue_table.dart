@@ -107,25 +107,30 @@ class _Row extends StatelessWidget {
             ),
             Expanded(
               flex: 3,
-              child: Text(titleOf(item.content), style: AppText.cardTitle, overflow: TextOverflow.ellipsis),
+              child: Text(
+                titleOf(item.content),
+                style: Theme.of(context).textTheme.titleMedium,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-            Expanded(
-              flex: 2,
-              child: Text(summaryOf(item.content), style: AppText.body, overflow: TextOverflow.ellipsis),
-            ),
+            Expanded(flex: 2, child: Text(summaryOf(item.content), overflow: TextOverflow.ellipsis)),
             SizedBox(
               width: _ownerWidth,
-              child: Text(item.proposedBy.value, style: AppText.body, overflow: TextOverflow.ellipsis),
+              child: Text(item.proposedBy.value, overflow: TextOverflow.ellipsis),
             ),
             SizedBox(
               width: _timeWidth,
-              child: Text(agoText(item.submittedAt, now: now), style: AppText.body),
+              child: Text(agoText(item.submittedAt, now: now)),
             ),
             SizedBox(
               width: _duplicatesWidth,
               child: item.duplicates.isEmpty
-                  ? const Text('—', style: AppText.body)
-                  : Text('${item.duplicates.length}', style: AppText.cardTitle.copyWith(color: AppColors.tomato)),
+                  ? const Text('—')
+                  : Text(
+                      '${item.duplicates.length}',
+                      style: Theme.of(context).textTheme.titleMedium
+                          ?.copyWith(color: Theme.of(context).colorScheme.error),
+                    ),
             ),
           ],
         ),
