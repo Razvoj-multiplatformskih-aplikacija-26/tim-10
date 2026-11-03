@@ -1,7 +1,9 @@
 import 'package:backoffice/data/fake_review_queue.dart';
 import 'package:backoffice/dependencies.dart';
+import 'package:backoffice/widgets/queue_list.dart';
 import 'package:backoffice/widgets/queue_skeleton.dart';
 import 'package:backoffice/widgets/queue_table.dart';
+import 'package:backoffice/widgets/review_detail_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -242,6 +244,73 @@ void main() {
       for (var i = 0; i < 11; i++) {
         await press(tester, LogicalKeyboardKey.arrowDown);
       }
+
+      expect(find.text('Kokos kari sa piletinom'), findsOneWidget);
+    });
+  });
+
+  group('a narrow window', () {
+    void useNarrowWindow(WidgetTester tester) {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(600, 800);
+      addTearDown(tester.view.reset);
+    }
+
+    testWidgets('shows a list instead of the table', (tester) async {
+      useNarrowWindow(tester);
+      await tester.pumpWidget(appWith(fakeDependencies()));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(QueueList), findsOneWidget);
+      expect(find.byType(QueueTable), findsNothing);
+    });
+
+    testWidgets('narrowing and widening the window keeps the open proposal', (tester) async {
+      final titleInPanel = find.descendant(of: find.byType(ReviewDetailPanel), matching: find.text('Šakšuka'));
+
+      useWideWindow(tester);
+      await tester.pumpWidget(appWith(fakeDependencies()));
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      expect(titleInPanel, findsOneWidget);
+
+      useNarrowWindow(tester);
+      await tester.pumpAndSettle();
+      expect(find.byType(QueueList), findsOneWidget);
+      expect(titleInPanel, findsOneWidget);
+
+      useWideWindow(tester);
+      await tester.pumpAndSettle();
+      expect(find.byType(QueueTable), findsOneWidget);
+      expect(titleInPanel, findsOneWidget);
+    });
+
+    testWidgets('the keyboard works the same in the list', (tester) async {
+      useNarrowWindow(tester);
+      await tester.pumpWidget(appWith(fakeDependencies()));
+      await tester.pumpAndSettle();
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyO);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Objavljeno u katalogu.'), findsOneWidget);
+    });
+
+    testWidgets('the list opens at the row under the cursor', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(1280, 300);
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(appWith(fakeDependencies()));
+      await tester.pumpAndSettle();
+      for (var i = 0; i < 11; i++) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      }
+      await tester.pumpAndSettle();
+
+      tester.view.physicalSize = const Size(600, 300);
+      await tester.pumpAndSettle();
 
       expect(find.text('Kokos kari sa piletinom'), findsOneWidget);
     });

@@ -6,6 +6,7 @@ import 'package:ui/ui.dart';
 
 import '../dependencies.dart';
 import '../shortcuts.dart';
+import '../widgets/queue_list.dart';
 import '../widgets/queue_skeleton.dart';
 import '../widgets/queue_table.dart';
 import '../widgets/reject_dialog.dart';
@@ -183,7 +184,11 @@ class _QueueScreenState extends State<QueueScreen> {
   }
 }
 
-/// The table and, when a proposal is open, the panel next to it.
+/// Below this width the table becomes a list and the side panel moves under it.
+const _wideFrom = 840.0;
+
+/// The proposals and, when one is open, its panel. The cursor and the panel live in the Bloc, above this
+/// `LayoutBuilder`, so changing the width of the window never loses the selection.
 class _QueueBody extends StatelessWidget {
   const _QueueBody({
     required this.state,
@@ -204,29 +209,42 @@ class _QueueBody extends StatelessWidget {
     final bloc = context.read<ReviewQueueBloc>();
     final now = context.read<AppDependencies>().clock.now();
     final canAct = state.canDecide && !state.isBusy;
+    final panel = ReviewDetailPanel(
+      item: state.current,
+      now: now,
+      onClose: () => bloc.add(const ReviewPanelClosed()),
+      onPublish: canAct ? () => onPublish(state.current.id) : null,
+      onReject: canAct ? () => onReject(state.current.id) : null,
+    );
+
     return Column(
       children: [
         SizedBox(height: 4, child: state.isBusy ? const LinearProgressIndicator() : null),
         Expanded(
-          child: Row(
-            children: [
-              Expanded(
-                child: QueueTable(state: state, now: now, focusNode: focusNode, onOpen: onOpen),
-              ),
-              if (state.isPanelOpen) ...[
-                const VerticalDivider(width: 1),
-                SizedBox(
-                  width: 380,
-                  child: ReviewDetailPanel(
-                    item: state.current,
-                    now: now,
-                    onClose: () => bloc.add(const ReviewPanelClosed()),
-                    onPublish: canAct ? () => onPublish(state.current.id) : null,
-                    onReject: canAct ? () => onReject(state.current.id) : null,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth < _wideFrom) {
+                return Column(
+                  children: [
+                    Expanded(
+                      child: QueueList(state: state, now: now, focusNode: focusNode, onOpen: onOpen),
+                    ),
+                    if (state.isPanelOpen) ...[
+                      const Divider(height: 1),
+                      SizedBox(height: constraints.maxHeight * 0.6, child: panel),
+                    ],
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(
+                    child: QueueTable(state: state, now: now, focusNode: focusNode, onOpen: onOpen),
                   ),
-                ),
-              ],
-            ],
+                  if (state.isPanelOpen) ...[const VerticalDivider(width: 1), SizedBox(width: 380, child: panel)],
+                ],
+              );
+            },
           ),
         ),
       ],
