@@ -16,13 +16,13 @@ List<Entry> possibleDuplicates(RestaurantContent candidate, List<Entry> catalog)
     if (entry.content case final RestaurantContent existing when _sameRestaurant(candidate, existing)) entry,
 ];
 
-/// A name (or a city, or an address) in a form fit for comparing: lower case, Serbian letters without diacritics,
-/// no punctuation, and without the words "restoran", "restaurant" and "bistro". "Bistro Paprika!" → "paprika".
+/// A name (or a city, or an address) in a form fit for comparing: lower case, plain Latin letters (Serbian Cyrillic
+/// and accents turned into Latin, "Ћевабџиница" → "cevabdzinica", "Crème" → "creme"), no punctuation, and without the
+/// words that only say what kind of place it is. "Bistro Paprika!" → "paprika".
 String normalizeName(String name) {
-  var text = name.toLowerCase();
-  _withoutDiacritics.forEach((letter, plain) => text = text.replaceAll(letter, plain));
-  text = text.replaceAll(RegExp(r'[^a-z0-9]+'), ' ');
-  return text.split(' ').where((word) => word.isNotEmpty && !_ignoredWords.contains(word)).join(' ');
+  final plain = name.toLowerCase().split('').map((letter) => _plainLatin[letter] ?? letter).join();
+  final words = plain.replaceAll(RegExp(r'[^a-z0-9]+'), ' ').split(' ');
+  return words.where((word) => word.isNotEmpty && !_ignoredWords.contains(word)).join(' ');
 }
 
 /// The distance between two points on the Earth, in meters (the haversine formula).
@@ -38,8 +38,25 @@ double distanceMeters(Coordinates a, Coordinates b) {
   return 2 * earthRadiusMeters * asin(sqrt(h));
 }
 
-const _withoutDiacritics = {'č': 'c', 'ć': 'c', 'š': 's', 'ž': 'z', 'đ': 'dj'};
-const _ignoredWords = {'restoran', 'restaurant', 'bistro'};
+/// Each lower-case letter that is not plain a–z, with its plain Latin form. A letter missing here is dropped.
+const _plainLatin = {
+  // Serbian Latin
+  'č': 'c', 'ć': 'c', 'š': 's', 'ž': 'z', 'đ': 'dj',
+  // Serbian Cyrillic, written the same way as the Latin above
+  'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'ђ': 'dj', 'е': 'e', 'ж': 'z', 'з': 'z', 'и': 'i',
+  'ј': 'j', 'к': 'k', 'л': 'l', 'љ': 'lj', 'м': 'm', 'н': 'n', 'њ': 'nj', 'о': 'o', 'п': 'p', 'р': 'r',
+  'с': 's', 'т': 't', 'ћ': 'c', 'у': 'u', 'ф': 'f', 'х': 'h', 'ц': 'c', 'ч': 'c', 'џ': 'dz', 'ш': 's',
+  // Accents common in restaurant names
+  'á': 'a', 'à': 'a', 'â': 'a', 'ä': 'a', 'ã': 'a', 'å': 'a',
+  'é': 'e', 'è': 'e', 'ê': 'e', 'ë': 'e',
+  'í': 'i', 'ì': 'i', 'î': 'i', 'ï': 'i',
+  'ó': 'o', 'ò': 'o', 'ô': 'o', 'ö': 'o', 'õ': 'o',
+  'ú': 'u', 'ù': 'u', 'û': 'u', 'ü': 'u',
+  'ñ': 'n', 'ç': 'c', 'ý': 'y', 'ÿ': 'y',
+};
+
+/// Words that say what kind of place it is, not which one.
+const _ignoredWords = {'restoran', 'restaurant', 'bistro', 'kafana', 'picerija', 'pizzeria', 'cafe', 'kafe'};
 
 bool _sameRestaurant(RestaurantContent a, RestaurantContent b) {
   if (normalizeName(a.location.city) != normalizeName(b.location.city)) return false;

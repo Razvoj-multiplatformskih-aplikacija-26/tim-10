@@ -39,6 +39,23 @@ void main() {
       expect(normalizeName('Čevabdžinica Željo'), 'cevabdzinica zeljo');
       expect(normalizeName('Đurđevak, restoran'), 'djurdjevak');
     });
+
+    test('writes Serbian Cyrillic the same way as Latin', () {
+      expect(normalizeName('Паприка'), 'paprika');
+      expect(normalizeName('Ћевабџиница Жељо'), normalizeName('Ćevabdžinica Željo'));
+      expect(normalizeName('Љубичица и Његош'), 'ljubicica i njegos');
+    });
+
+    test('turns accented letters into plain ones instead of dropping them', () {
+      expect(normalizeName('Crème Brûlée'), 'creme brulee');
+      expect(normalizeName('Müller'), 'muller');
+    });
+
+    test('drops kafana, picerija, pizzeria, cafe and kafe as well', () {
+      expect(normalizeName('Kafana Paprika'), normalizeName('Restoran Paprika'));
+      expect(normalizeName('Café Paprika'), 'paprika');
+      expect(normalizeName('Pizzeria Napoli'), normalizeName('Picerija Napoli'));
+    });
   });
 
   group('R5 · distanceMeters', () {
@@ -53,6 +70,12 @@ void main() {
       final catalog = [published(restaurant('Paprika'))];
 
       expect(possibleDuplicates(restaurant('Bistro Paprika'), catalog), catalog);
+    });
+
+    test('a name in Cyrillic finds the same restaurant in Latin', () {
+      final catalog = [published(restaurant('Paprika'))];
+
+      expect(possibleDuplicates(restaurant('Ресторан Паприка', city: 'Београд'), catalog), catalog);
     });
 
     test('one name may contain the other, as whole words', () {
