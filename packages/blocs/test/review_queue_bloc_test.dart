@@ -23,6 +23,8 @@ void main() {
 
   ReviewQueueBloc blocWith(ReviewQueueRepository queue, {User user = editor}) => ReviewQueueBloc(
     loadQueue: LoadReviewQueue(queue: queue),
+    publish: PublishProposal(queue: queue, clock: FixedClock(at)),
+    reject: RejectProposal(queue: queue, clock: FixedClock(at)),
     editor: user,
   );
 

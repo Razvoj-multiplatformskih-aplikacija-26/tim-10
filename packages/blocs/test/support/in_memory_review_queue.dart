@@ -13,10 +13,7 @@ final class InMemoryReviewQueue implements ReviewQueueRepository {
   @override
   Future<List<ReviewItem>> pending() async {
     _failIfAsked();
-    return [
-      for (final entry in _entries)
-        if (ReviewItem.of(entry, catalog: const []) case final item?) item,
-    ];
+    return [for (final entry in _entries) ?ReviewItem.of(entry, catalog: const [])];
   }
 
   @override
