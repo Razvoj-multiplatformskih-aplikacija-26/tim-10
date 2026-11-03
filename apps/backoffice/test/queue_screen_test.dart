@@ -38,4 +38,55 @@ void main() {
       expect(find.text('Red je prazan'), findsOneWidget);
     });
   });
+
+  group('the detail panel', () {
+    testWidgets('a click on a row opens its detail next to the table', (tester) async {
+      useWideWindow(tester);
+      await tester.pumpWidget(appWith(fakeDependencies()));
+      await tester.pumpAndSettle();
+      expect(find.text('Kuhinja: domaća'), findsNothing);
+
+      await tester.tap(find.text('Paprika'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Kuhinja: domaća'), findsOneWidget);
+      expect(find.text('Cara Dušana 14, Beograd'), findsOneWidget);
+    });
+
+    testWidgets('never shows the personal layer (R7)', (tester) async {
+      useWideWindow(tester);
+      await tester.pumpWidget(appWith(fakeDependencies()));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Paprika'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('rođendan'), findsNothing);
+    });
+
+    testWidgets('puts a possible duplicate next to the proposal (R5)', (tester) async {
+      useWideWindow(tester);
+      await tester.pumpWidget(appWith(fakeDependencies()));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Paprika'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Mogući duplikati u katalogu (1)'), findsOneWidget);
+      expect(find.text('Bistro Paprika'), findsOneWidget);
+    });
+
+    testWidgets('the close button closes the panel', (tester) async {
+      useWideWindow(tester);
+      await tester.pumpWidget(appWith(fakeDependencies()));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Paprika'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Zatvori (Esc)'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Kuhinja: domaća'), findsNothing);
+    });
+  });
 }

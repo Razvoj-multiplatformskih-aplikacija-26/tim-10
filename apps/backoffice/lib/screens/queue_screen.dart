@@ -7,6 +7,7 @@ import 'package:ui/ui.dart';
 import '../dependencies.dart';
 import '../widgets/queue_skeleton.dart';
 import '../widgets/queue_table.dart';
+import '../widgets/review_detail_panel.dart';
 
 /// The editor's main screen: the queue of proposals. It only draws the state of the Bloc and sends events.
 class QueueScreen extends StatefulWidget {
@@ -43,13 +44,36 @@ class _QueueScreenState extends State<QueueScreen> {
           ReviewQueueEmpty() => const Center(
             child: EmptyState(title: 'Red je prazan', message: 'Nijedan predlog ne čeka odluku urednika.'),
           ),
-          ReviewQueueLoaded() => QueueTable(
-            state: state,
-            now: context.read<AppDependencies>().clock.now(),
-            onOpen: (id) => context.read<ReviewQueueBloc>().add(ReviewItemOpened(id)),
-          ),
+          ReviewQueueLoaded() => _QueueBody(state: state),
         },
       ),
+    );
+  }
+}
+
+/// The table and, when a proposal is open, the panel next to it.
+class _QueueBody extends StatelessWidget {
+  const _QueueBody({required this.state});
+
+  final ReviewQueueLoaded state;
+
+  @override
+  Widget build(BuildContext context) {
+    final bloc = context.read<ReviewQueueBloc>();
+    final now = context.read<AppDependencies>().clock.now();
+    return Row(
+      children: [
+        Expanded(
+          child: QueueTable(state: state, now: now, onOpen: (id) => bloc.add(ReviewItemOpened(id))),
+        ),
+        if (state.isPanelOpen) ...[
+          const VerticalDivider(width: 1),
+          SizedBox(
+            width: 380,
+            child: ReviewDetailPanel(item: state.current, now: now, onClose: () => bloc.add(const ReviewPanelClosed())),
+          ),
+        ],
+      ],
     );
   }
 }
