@@ -9,6 +9,7 @@ import '../dependencies.dart';
 import '../router.dart';
 import '../shortcuts.dart';
 import '../widgets/queue_list.dart';
+import '../widgets/queue_menu.dart';
 import '../widgets/queue_skeleton.dart';
 import '../widgets/queue_table.dart';
 import '../widgets/reject_dialog.dart';
@@ -166,7 +167,12 @@ class _QueueScreenState extends State<QueueScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Red predloga'),
-        actions: [TextButton(onPressed: _showShortcuts, child: const Text('Prečice (?)'))],
+        actions: [
+          QueueMenu(
+            onRefresh: () => context.read<ReviewQueueBloc>().add(ReviewQueueRequested(selected: widget.selected)),
+            onShowShortcuts: _showShortcuts,
+          ),
+        ],
       ),
       body: Shortcuts(
         shortcuts: queueShortcuts,

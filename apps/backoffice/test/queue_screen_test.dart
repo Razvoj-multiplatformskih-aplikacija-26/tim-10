@@ -377,4 +377,58 @@ void main() {
       expect(find.byType(QueueTable), findsOneWidget);
     });
   });
+
+  group('the menu', () {
+    Future<void> choose(WidgetTester tester, String item) async {
+      await tester.tap(find.byTooltip('Još'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(item));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('"Simuliraj grešku", then "Osveži", shows the failure', (tester) async {
+      useWideWindow(tester);
+      await tester.pumpWidget(appWith(fakeDependencies()));
+      await tester.pumpAndSettle();
+
+      await choose(tester, 'Simuliraj grešku');
+      await choose(tester, 'Osveži');
+
+      expect(find.text('Predlozi nisu učitani'), findsOneWidget);
+    });
+
+    testWidgets('"Prazan odgovor", then "Osveži", shows the empty queue', (tester) async {
+      useWideWindow(tester);
+      await tester.pumpWidget(appWith(fakeDependencies()));
+      await tester.pumpAndSettle();
+
+      await choose(tester, 'Prazan odgovor');
+      await choose(tester, 'Osveži');
+
+      expect(find.text('Red je prazan'), findsOneWidget);
+    });
+
+    testWidgets('"Prečice" lists the keys', (tester) async {
+      useWideWindow(tester);
+      await tester.pumpWidget(appWith(fakeDependencies()));
+      await tester.pumpAndSettle();
+
+      await choose(tester, 'Prečice (?)');
+
+      expect(find.text('objavi'), findsOneWidget);
+      expect(find.text('odbij, uz razlog'), findsOneWidget);
+    });
+
+    testWidgets('the keyboard still works after the menu', (tester) async {
+      useWideWindow(tester);
+      await tester.pumpWidget(appWith(fakeDependencies()));
+      await tester.pumpAndSettle();
+
+      await choose(tester, 'Osveži');
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyO);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Objavljeno u katalogu.'), findsOneWidget);
+    });
+  });
 }
