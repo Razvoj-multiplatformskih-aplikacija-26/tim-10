@@ -2,3 +2,6 @@
 ///
 /// Pure Dart. Implementations of the ports live in the apps and are chosen in `dependencies.dart`.
 library;
+
+export 'src/clock.dart';
+export 'src/repository_exception.dart';
