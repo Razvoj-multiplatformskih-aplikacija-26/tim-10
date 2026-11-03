@@ -3,6 +3,7 @@
 /// Pure Dart, shared by both apps, the server and the public web. No Flutter and no platform libraries here.
 library;
 
+export 'src/entry/entry_content.dart';
 export 'src/entry/entry_status.dart';
 export 'src/entry/video_link.dart';
 export 'src/errors.dart';
