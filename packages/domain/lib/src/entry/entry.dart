@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
 import '../identifiers.dart';
@@ -82,6 +83,7 @@ final class Entry {
     required this.createdAt,
     this.content,
     this.personal = const PersonalLayer(),
+    this.analysisRequests = const [],
   });
 
   final EntryId id;
@@ -94,8 +96,17 @@ final class Entry {
   final PersonalLayer personal;
   final DateTime createdAt;
 
+  /// When an analysis of this entry was requested: the new link, then every retry. Empty when the result was copied
+  /// from an existing analysis (R4). The daily limit (R2) counts these times.
+  final List<DateTime> analysisRequests;
+
   /// A change makes a new entry; id, owner, source and creation time never change.
-  Entry copyWith({EntryContent? content, EntryStatus? status, PersonalLayer? personal}) => Entry(
+  Entry copyWith({
+    EntryContent? content,
+    EntryStatus? status,
+    PersonalLayer? personal,
+    List<DateTime>? analysisRequests,
+  }) => Entry(
     id: id,
     owner: owner,
     source: source,
@@ -103,6 +114,7 @@ final class Entry {
     createdAt: createdAt,
     content: content ?? this.content,
     personal: personal ?? this.personal,
+    analysisRequests: analysisRequests ?? this.analysisRequests,
   );
 
   @override
@@ -114,10 +126,12 @@ final class Entry {
       other.content == content &&
       other.status == status &&
       other.personal == personal &&
-      other.createdAt == createdAt;
+      other.createdAt == createdAt &&
+      const ListEquality<DateTime>().equals(other.analysisRequests, analysisRequests);
 
   @override
-  int get hashCode => Object.hash(id, owner, source, content, status, personal, createdAt);
+  int get hashCode =>
+      Object.hash(id, owner, source, content, status, personal, createdAt, Object.hashAll(analysisRequests));
 
   @override
   String toString() => 'Entry(${id.value}, ${status.runtimeType})';

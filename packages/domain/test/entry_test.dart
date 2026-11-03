@@ -57,6 +57,14 @@ void main() {
 
       expect(queued.content, isNull);
       expect(queued.personal, const PersonalLayer());
+      expect(queued.analysisRequests, isEmpty);
+    });
+
+    test('entries with different analysis requests are not equal', () {
+      expect(
+        awaitingReview().copyWith(analysisRequests: [createdAt]),
+        isNot(awaitingReview().copyWith(analysisRequests: [createdAt, createdAt])),
+      );
     });
   });
 

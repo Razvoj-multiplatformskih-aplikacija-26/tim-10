@@ -30,6 +30,26 @@ final class InvalidTransition extends DomainError {
   int get hashCode => Object.hash(from, to);
 }
 
+/// R2: the user already requested `dailyAnalysisLimit` analyses in the last 24 hours.
+/// [availableAt] is when the next one becomes possible ("Sledeća analiza je moguća za 3 h").
+@immutable
+final class DailyLimitReached extends DomainError {
+  const DailyLimitReached({required this.availableAt});
+
+  final DateTime availableAt;
+
+  @override
+  bool operator ==(Object other) => other is DailyLimitReached && other.availableAt == availableAt;
+
+  @override
+  int get hashCode => availableAt.hashCode;
+}
+
+/// R3: the entry is waiting for or going through the analysis, so it cannot be changed or deleted yet.
+final class EntryBeingAnalyzed extends DomainError {
+  const EntryBeingAnalyzed();
+}
+
 /// R1: the text is not a link at all.
 final class InvalidLink extends DomainError {
   const InvalidLink();
