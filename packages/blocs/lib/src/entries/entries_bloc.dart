@@ -19,6 +19,8 @@ final class EntriesBloc extends Bloc<EntriesEvent, EntriesState> {
   }) : super(const EntriesLoading()) {
     on<EntriesRequested>(_onRequested);
     on<EntryActionRequested>(_onActionRequested);
+    on<EntriesKindFilterChanged>(_onKindFilterChanged);
+    on<EntriesStatusFilterToggled>(_onStatusFilterToggled);
     on<EntriesNoticeAcknowledged>(_onNoticeAcknowledged);
   }
 
@@ -65,15 +67,39 @@ final class EntriesBloc extends Bloc<EntriesEvent, EntriesState> {
           emit(current.withNotice(EntryActionRejected(event.action, error)));
         case Success(:final value):
           final entries = await loadMyEntries(user);
-          emit(_loaded(entries, notice: EntryActionSucceeded(event.action, value)));
+          emit(
+            _loaded(
+              entries,
+              kind: current.kind,
+              status: current.status,
+              notice: EntryActionSucceeded(event.action, value),
+            ),
+          );
       }
     } on Exception catch (cause) {
       emit(current.withNotice(EntryActionFailed(event.action, event.id, cause)));
     }
   }
 
-  EntriesLoaded _loaded(List<Entry> entries, {EntriesNotice? notice}) =>
-      EntriesLoaded(entries, actions: _allowedActions(entries), notice: notice);
+  void _onKindFilterChanged(EntriesKindFilterChanged event, Emitter<EntriesState> emit) {
+    final current = state;
+    if (current is EntriesLoaded) emit(current.withFilters(kind: event.kind, status: current.status));
+  }
+
+  void _onStatusFilterToggled(EntriesStatusFilterToggled event, Emitter<EntriesState> emit) {
+    final current = state;
+    if (current is! EntriesLoaded) return;
+    final status = current.status == event.chip ? null : event.chip;
+    emit(current.withFilters(kind: current.kind, status: status));
+  }
+
+  /// A fresh list keeps the filters the user picked.
+  EntriesLoaded _loaded(
+    List<Entry> entries, {
+    KindFilter kind = KindFilter.all,
+    StatusFilter? status,
+    EntriesNotice? notice,
+  }) => EntriesLoaded(entries, actions: _allowedActions(entries), kind: kind, status: status, notice: notice);
 
   /// Which buttons each card shows. The domain answers by trying each action; the screen decides nothing.
   /// A retry over the daily limit still shows the button: the limit is checked when it is tapped (R2).

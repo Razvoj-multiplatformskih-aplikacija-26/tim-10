@@ -20,6 +20,20 @@ final class EntryActionRequested extends EntriesEvent {
   final EntryId id;
 }
 
+/// The user picked a segment: Sve, Recepti or Restorani.
+final class EntriesKindFilterChanged extends EntriesEvent {
+  const EntriesKindFilterChanged(this.kind);
+
+  final KindFilter kind;
+}
+
+/// The user tapped a status chip. Tapping the selected chip again shows all states.
+final class EntriesStatusFilterToggled extends EntriesEvent {
+  const EntriesStatusFilterToggled(this.chip);
+
+  final StatusFilter chip;
+}
+
 /// The screen has shown the notice (a SnackBar); the Bloc can forget it.
 final class EntriesNoticeAcknowledged extends EntriesEvent {
   const EntriesNoticeAcknowledged();
