@@ -20,6 +20,14 @@ void main() {
     createdAt: at,
   );
 
+  // A saved entry may be proposed for the catalog or deleted.
+  final loadedSaved = EntriesLoaded(
+    [saved],
+    actions: {
+      saved.id: {EntryAction.propose, EntryAction.delete},
+    },
+  );
+
   EntriesBloc blocWith(EntryRepository repository) => entriesBlocFor(repository, user: petar, clock: FixedClock(at));
 
   group('EntriesBloc · four states', () {
@@ -33,10 +41,7 @@ void main() {
       'shows the user\'s entries',
       build: () => blocWith(InMemoryEntryRepository([saved])),
       act: (bloc) => bloc.add(const EntriesRequested()),
-      expect: () => [
-        const EntriesLoading(),
-        EntriesLoaded([saved]),
-      ],
+      expect: () => [const EntriesLoading(), loadedSaved],
     );
 
     blocTest<EntriesBloc, EntriesState>(
@@ -64,12 +69,7 @@ void main() {
         await Future<void>.delayed(Duration.zero);
         bloc.add(const EntriesRequested());
       },
-      expect: () => [
-        const EntriesLoading(),
-        isA<EntriesFailure>(),
-        const EntriesLoading(),
-        EntriesLoaded([saved]),
-      ],
+      expect: () => [const EntriesLoading(), isA<EntriesFailure>(), const EntriesLoading(), loadedSaved],
     );
   });
 
@@ -89,7 +89,7 @@ void main() {
       repository.answers[0].complete(const []);
       await Future<void>.delayed(Duration.zero);
 
-      expect(states.last, EntriesLoaded([saved]));
+      expect(states.last, loadedSaved);
       expect(states, isNot(contains(const EntriesEmpty())));
 
       await subscription.cancel();

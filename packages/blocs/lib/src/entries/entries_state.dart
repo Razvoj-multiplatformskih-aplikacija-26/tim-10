@@ -32,9 +32,12 @@ final class EntriesEmpty extends EntriesState {
 }
 
 final class EntriesLoaded extends EntriesState {
-  const EntriesLoaded(this.entries, {this.busyId, this.notice});
+  const EntriesLoaded(this.entries, {this.actions = const {}, this.busyId, this.notice});
 
   final List<Entry> entries;
+
+  /// The buttons each card shows, as the domain allows them. The screen draws exactly these.
+  final Map<EntryId, Set<EntryAction>> actions;
 
   /// The entry whose action is running; the screen disables its buttons.
   final EntryId? busyId;
@@ -44,8 +47,19 @@ final class EntriesLoaded extends EntriesState {
 
   bool get isBusy => busyId != null;
 
+  Set<EntryAction> actionsFor(EntryId id) => actions[id] ?? const {};
+
+  /// The same list while the action on [id] runs.
+  EntriesLoaded busyWith(EntryId id) => EntriesLoaded(entries, actions: actions, busyId: id);
+
+  /// The same list, no longer busy, with a message about the last action.
+  EntriesLoaded withNotice(EntriesNotice notice) => EntriesLoaded(entries, actions: actions, notice: notice);
+
+  /// The same list after the screen has shown the message.
+  EntriesLoaded withoutNotice() => EntriesLoaded(entries, actions: actions, busyId: busyId);
+
   @override
-  List<Object?> get props => [entries, busyId, notice];
+  List<Object?> get props => [entries, actions, busyId, notice];
 
   @override
   String toString() =>

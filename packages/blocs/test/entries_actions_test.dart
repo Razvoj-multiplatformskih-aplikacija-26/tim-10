@@ -26,8 +26,7 @@ void main() {
   final analyzing = entry('e-2', Analyzing(startedAt: earlier));
   final library = [awaiting, analyzing];
 
-  EntriesBloc blocWith(InMemoryEntryRepository repository) =>
-      entriesBlocFor(repository, user: petar, clock: FixedClock(now));
+  EntriesBloc blocWith(EntryRepository repository) => entriesBlocFor(repository, user: petar, clock: FixedClock(now));
 
   group('EntriesBloc · actions', () {
     blocTest<EntriesBloc, EntriesState>(
@@ -79,7 +78,11 @@ void main() {
       act: (bloc) => bloc.add(const EntryActionRequested(EntryAction.delete, EntryId('e-1'))),
       skip: 1,
       expect: () => [
-        EntriesLoaded([analyzing], notice: EntryActionSucceeded(EntryAction.delete, awaiting)),
+        EntriesLoaded(
+          [analyzing],
+          actions: {analyzing.id: const <EntryAction>{}}, // nothing while it is being analysed (R3)
+          notice: EntryActionSucceeded(EntryAction.delete, awaiting),
+        ),
       ],
     );
 
@@ -100,6 +103,53 @@ void main() {
       ],
     );
 
+    test('each card gets exactly the buttons the domain allows', () async {
+      const editor = UserId('u-editor');
+      final reason = RejectionReason.parse('Fale koraci.').valueOrNull!;
+      final all = [
+        entry('queued', Queued(at: earlier)),
+        entry('analyzing', Analyzing(startedAt: earlier)),
+        entry('awaiting', AwaitingReview(analyzedAt: earlier)),
+        entry('saved', Saved(at: earlier)),
+        entry('failed', AnalysisFailed(reason: AnalysisFailure.notFood, at: earlier)),
+        entry('pending', PendingApproval(submittedAt: earlier)),
+        entry('published', Published(by: editor, at: earlier, catalogId: const EntryId('c-1'))),
+        entry('rejected', Rejected(by: editor, reason: reason, at: earlier)),
+      ];
+      final bloc = blocWith(InMemoryEntryRepository(all))..add(const EntriesRequested());
+
+      final loaded = await bloc.stream.firstWhere((s) => s is EntriesLoaded) as EntriesLoaded;
+
+      expect(loaded.actions, {
+        const EntryId('queued'): <EntryAction>{},
+        const EntryId('analyzing'): <EntryAction>{},
+        const EntryId('awaiting'): {EntryAction.save, EntryAction.delete},
+        const EntryId('saved'): {EntryAction.propose, EntryAction.delete},
+        const EntryId('failed'): {EntryAction.retry, EntryAction.delete},
+        const EntryId('pending'): {EntryAction.delete},
+        const EntryId('published'): {EntryAction.delete},
+        const EntryId('rejected'): {EntryAction.propose, EntryAction.delete},
+      });
+      await bloc.close();
+    });
+
+    test('another user\'s entry would get no buttons at all', () async {
+      final anas = Entry(
+        id: const EntryId('ana-1'),
+        owner: const UserId('u-ana'),
+        source: const Manual(),
+        status: Saved(at: earlier),
+        createdAt: earlier,
+      );
+      // The repository would never give Ana's entry to Petar; this only shows that the domain also says no.
+      final bloc = blocWith(_EveryoneRepository([anas]))..add(const EntriesRequested());
+
+      final loaded = await bloc.stream.firstWhere((s) => s is EntriesLoaded) as EntriesLoaded;
+
+      expect(loaded.actionsFor(const EntryId('ana-1')), isEmpty);
+      await bloc.close();
+    });
+
     blocTest<EntriesBloc, EntriesState>(
       'acknowledging the notice clears it',
       build: () => blocWith(InMemoryEntryRepository(library)),
@@ -108,4 +158,26 @@ void main() {
       expect: () => [EntriesLoaded(library)],
     );
   });
+}
+
+/// A repository that, wrongly, gives everyone's entries to anyone: only for the test above.
+final class _EveryoneRepository implements EntryRepository {
+  _EveryoneRepository(this._entries);
+
+  final List<Entry> _entries;
+
+  @override
+  Future<List<Entry>> entriesOf(UserId owner) async => _entries;
+
+  @override
+  Future<Entry?> find(EntryId id) => throw UnimplementedError();
+
+  @override
+  Future<Result<List<Entry>>> submitLink(VideoLink link, {required UserId owner}) => throw UnimplementedError();
+
+  @override
+  Future<Entry> save(Entry entry) => throw UnimplementedError();
+
+  @override
+  Future<void> delete(EntryId id) => throw UnimplementedError();
 }

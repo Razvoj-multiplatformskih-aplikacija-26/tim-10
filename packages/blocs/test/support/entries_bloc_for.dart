@@ -10,4 +10,5 @@ EntriesBloc entriesBlocFor(EntryRepository repository, {required User user, requ
   retry: RetryAnalysis(entries: repository, clock: clock),
   delete: DeleteEntry(entries: repository),
   user: user,
+  clock: clock,
 );

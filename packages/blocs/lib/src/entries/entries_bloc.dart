@@ -15,6 +15,7 @@ final class EntriesBloc extends Bloc<EntriesEvent, EntriesState> {
     required this.retry,
     required this.delete,
     required this.user,
+    required this.clock,
   }) : super(const EntriesLoading()) {
     on<EntriesRequested>(_onRequested);
     on<EntryActionRequested>(_onActionRequested);
@@ -30,6 +31,8 @@ final class EntriesBloc extends Bloc<EntriesEvent, EntriesState> {
   /// The signed-in user. In KT1 a fixed demo user; from KT2 the one who logged in.
   final User user;
 
+  final Clock clock;
+
   /// Every load gets a number; an answer to an older load is dropped (a slow first load must not overwrite
   /// the result of "Pokušaj ponovo").
   int _request = 0;
@@ -40,7 +43,7 @@ final class EntriesBloc extends Bloc<EntriesEvent, EntriesState> {
     try {
       final entries = await loadMyEntries(user);
       if (request != _request) return;
-      emit(entries.isEmpty ? const EntriesEmpty() : EntriesLoaded(entries));
+      emit(entries.isEmpty ? const EntriesEmpty() : _loaded(entries));
     } on Exception catch (cause) {
       if (request != _request) return;
       emit(EntriesFailure(cause));
@@ -53,20 +56,38 @@ final class EntriesBloc extends Bloc<EntriesEvent, EntriesState> {
   Future<void> _onActionRequested(EntryActionRequested event, Emitter<EntriesState> emit) async {
     final current = state;
     if (current is! EntriesLoaded || current.isBusy) return;
-    emit(EntriesLoaded(current.entries, busyId: event.id));
+    emit(current.busyWith(event.id));
 
     try {
       final result = await _run(event.action, event.id);
       switch (result) {
         case Failure(:final error):
-          emit(EntriesLoaded(current.entries, notice: EntryActionRejected(event.action, error)));
+          emit(current.withNotice(EntryActionRejected(event.action, error)));
         case Success(:final value):
           final entries = await loadMyEntries(user);
-          emit(EntriesLoaded(entries, notice: EntryActionSucceeded(event.action, value)));
+          emit(_loaded(entries, notice: EntryActionSucceeded(event.action, value)));
       }
     } on Exception catch (cause) {
-      emit(EntriesLoaded(current.entries, notice: EntryActionFailed(event.action, event.id, cause)));
+      emit(current.withNotice(EntryActionFailed(event.action, event.id, cause)));
     }
+  }
+
+  EntriesLoaded _loaded(List<Entry> entries, {EntriesNotice? notice}) =>
+      EntriesLoaded(entries, actions: _allowedActions(entries), notice: notice);
+
+  /// Which buttons each card shows. The domain answers by trying each action; the screen decides nothing.
+  /// A retry over the daily limit still shows the button: the limit is checked when it is tapped (R2).
+  Map<EntryId, Set<EntryAction>> _allowedActions(List<Entry> entries) {
+    final now = clock.now();
+    return {
+      for (final entry in entries)
+        entry.id: {
+          if (saveEntry(entry, by: user, now: now).isSuccess) EntryAction.save,
+          if (proposeEntry(entry, by: user, now: now).isSuccess) EntryAction.propose,
+          if (retryAnalysis(entry, by: user, now: now).isSuccess) EntryAction.retry,
+          if (deleteEntry(entry, by: user).isSuccess) EntryAction.delete,
+        },
+    };
   }
 
   Future<Result<Entry>> _run(EntryAction action, EntryId id) => switch (action) {
@@ -79,7 +100,7 @@ final class EntriesBloc extends Bloc<EntriesEvent, EntriesState> {
   void _onNoticeAcknowledged(EntriesNoticeAcknowledged event, Emitter<EntriesState> emit) {
     final current = state;
     if (current is EntriesLoaded && current.notice != null) {
-      emit(EntriesLoaded(current.entries, busyId: current.busyId));
+      emit(current.withoutNotice());
     }
   }
 }
