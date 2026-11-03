@@ -1,6 +1,7 @@
 import 'package:meta/meta.dart';
 
 import '../identifiers.dart';
+import 'rejection_reason.dart';
 
 /// Why the analysis of a video failed.
 enum AnalysisFailure { unavailable, notFood, unsupported, timeout }
@@ -121,7 +122,7 @@ final class Rejected extends EntryStatus {
   const Rejected({required this.by, required this.reason, required this.at});
 
   final UserId by;
-  final String reason;
+  final RejectionReason reason;
   final DateTime at;
 
   @override

@@ -7,6 +7,7 @@ export 'src/entry/access_policy.dart';
 export 'src/entry/entry.dart';
 export 'src/entry/entry_content.dart';
 export 'src/entry/entry_status.dart';
+export 'src/entry/rejection_reason.dart';
 export 'src/entry/video_link.dart';
 export 'src/errors.dart';
 export 'src/identifiers.dart';

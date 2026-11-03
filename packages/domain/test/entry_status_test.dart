@@ -4,6 +4,7 @@ import 'package:test/test.dart';
 void main() {
   final at = DateTime.utc(2026, 11, 3, 12);
   const editor = UserId('u-editor');
+  RejectionReason reason(String text) => RejectionReason.parse(text).valueOrNull!;
 
   final queued = Queued(at: at);
   final analyzing = Analyzing(startedAt: at);
@@ -12,7 +13,7 @@ void main() {
   final analysisFailed = AnalysisFailed(reason: AnalysisFailure.notFood, at: at);
   final pendingApproval = PendingApproval(submittedAt: at);
   final published = Published(by: editor, at: at, catalogId: const EntryId('c-1'));
-  final rejected = Rejected(by: editor, reason: 'Nije recept.', at: at);
+  final rejected = Rejected(by: editor, reason: reason('Nije recept.'), at: at);
 
   final all = [queued, analyzing, awaitingReview, saved, analysisFailed, pendingApproval, published, rejected];
 
@@ -55,8 +56,8 @@ void main() {
 
   group('EntryStatus', () {
     test('states with the same data are equal', () {
-      expect(Rejected(by: editor, reason: 'Nije recept.', at: at), rejected);
-      expect(Rejected(by: editor, reason: 'Duplikat.', at: at), isNot(rejected));
+      expect(Rejected(by: editor, reason: reason('Nije recept.'), at: at), rejected);
+      expect(Rejected(by: editor, reason: reason('Duplikat.'), at: at), isNot(rejected));
       expect(Saved(at: at), isNot(Queued(at: at)));
     });
   });
