@@ -67,4 +67,44 @@ void main() {
       );
     });
   });
+
+  group('entriesFromAnalysis works for any number and kind of items', () {
+    RestaurantContent restaurant(String name) => RestaurantContent(
+      name: name,
+      location: const Location(address: 'Soho', city: 'London'),
+      cuisine: 'japanska',
+      recommendedDishes: const ['ramen'],
+    );
+
+    List<Entry> entriesFrom(List<EntryContent> items) => entriesFromAnalysis(
+      waiting(Queued(at: submittedAt)),
+      AnalysisResult(link: link, items: items),
+      now: now,
+      newId: (i) => EntryId('e-1-$i'),
+    ).valueOrNull!;
+
+    test('a video with one recipe gives one entry', () {
+      final entries = entriesFrom([recipe('Palačinke')]);
+
+      expect(entries, hasLength(1));
+      expect(entries.single.source, FromVideo(link: link, itemIndex: 0, itemCount: 1));
+    });
+
+    test('"top 10 restaurants in London" gives ten restaurant entries', () {
+      final entries = entriesFrom([for (var i = 1; i <= 10; i++) restaurant('Restoran $i')]);
+
+      expect(entries, hasLength(10));
+      expect(entries.map((e) => e.content), everyElement(isA<RestaurantContent>()));
+      expect(entries.map((e) => (e.source as FromVideo).itemIndex), [for (var i = 0; i < 10; i++) i]);
+      expect(entries.map((e) => (e.source as FromVideo).itemCount).toSet(), {10});
+      expect(remainingAnalyses(entries, now: now), dailyAnalysisLimit - 1);
+    });
+
+    test('a mixed video keeps the kind of each item', () {
+      final entries = entriesFrom([restaurant('Kinoko'), recipe('Ramen kao u Kinoku')]);
+
+      expect(entries[0].content, isA<RestaurantContent>());
+      expect(entries[1].content, isA<RecipeContent>());
+    });
+  });
 }
