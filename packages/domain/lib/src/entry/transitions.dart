@@ -1,9 +1,11 @@
 import '../errors.dart';
+import '../identifiers.dart';
 import '../result.dart';
 import '../user.dart';
 import 'access_policy.dart';
 import 'entry.dart';
 import 'entry_status.dart';
+import 'rejection_reason.dart';
 
 // Every action has the same order of checks: who may do it (AccessPolicy), then whether the state allows it
 // (canTransition), then the new entry. Time comes in as `now` and is stored in UTC.
@@ -23,6 +25,25 @@ Result<Entry> proposeEntry(Entry entry, {required User by, required DateTime now
 /// the use case or the repository with `remainingAnalyses`, not here.
 Result<Entry> retryAnalysis(Entry entry, {required User by, required DateTime now}) =>
     _moveTo(entry, Queued(at: now.toUtc()), allowed: AccessPolicy.canManage(by, entry));
+
+/// "Objavi": an editor accepts a proposal into the catalog. `PendingApproval → Published`.
+///
+/// [catalogId] is the new catalog record, or the existing one when the proposal is a duplicate (R5).
+Result<Entry> publishEntry(Entry entry, {required User by, required DateTime now, required EntryId catalogId}) =>
+    _moveTo(
+      entry,
+      Published(by: by.id, at: now.toUtc(), catalogId: catalogId),
+      allowed: AccessPolicy.canDecide(by),
+    );
+
+/// "Odbij": an editor rejects a proposal; the user sees the [reason] and may propose again.
+/// `PendingApproval → Rejected`. The reason has already passed `RejectionReason.parse` (R8).
+Result<Entry> rejectEntry(Entry entry, {required User by, required DateTime now, required RejectionReason reason}) =>
+    _moveTo(
+      entry,
+      Rejected(by: by.id, reason: reason, at: now.toUtc()),
+      allowed: AccessPolicy.canDecide(by),
+    );
 
 Result<Entry> _moveTo(Entry entry, EntryStatus next, {required bool allowed}) {
   if (!allowed) return const Failure(NotAllowed());

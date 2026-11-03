@@ -133,4 +133,47 @@ void main() {
       );
     });
   });
+
+  group('R6 · publishEntry and rejectEntry', () {
+    final reason = RejectionReason.parse('Video ne prikazuje pripremu.').valueOrNull!;
+    final proposal = petarsEntry(PendingApproval(submittedAt: earlier));
+
+    test('an editor publishes a proposal into the catalog', () {
+      final result = publishEntry(proposal, by: editor, now: now, catalogId: const EntryId('c-7'));
+
+      expect(result.valueOrNull?.status, Published(by: editor.id, at: now, catalogId: const EntryId('c-7')));
+      expect(result.valueOrNull?.content, recipe);
+    });
+
+    test('an editor rejects a proposal with a reason', () {
+      final result = rejectEntry(proposal, by: editor, now: now, reason: reason);
+
+      expect(result.valueOrNull?.status, Rejected(by: editor.id, reason: reason, at: now));
+    });
+
+    test('a user may not publish, not even their own proposal', () {
+      expect(
+        publishEntry(proposal, by: petar, now: now, catalogId: const EntryId('c-7')),
+        const Failure<Entry>(NotAllowed()),
+      );
+      expect(rejectEntry(proposal, by: petar, now: now, reason: reason), const Failure<Entry>(NotAllowed()));
+    });
+
+    test('an entry that was not proposed cannot be published', () {
+      final result = publishEntry(
+        petarsEntry(Saved(at: earlier)),
+        by: editor,
+        now: now,
+        catalogId: const EntryId('c-7'),
+      );
+
+      expect(result.errorOrNull, isA<InvalidTransition>());
+    });
+
+    test('a published entry cannot be rejected afterwards', () {
+      final published = publishEntry(proposal, by: editor, now: now, catalogId: const EntryId('c-7')).valueOrNull!;
+
+      expect(rejectEntry(published, by: editor, now: now, reason: reason).errorOrNull, isA<InvalidTransition>());
+    });
+  });
 }
