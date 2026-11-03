@@ -10,6 +10,11 @@ sealed class DomainError {
   const DomainError();
 }
 
+/// The entry does not exist (any more): deleted on another device, or a stale link.
+final class NotFound extends DomainError {
+  const NotFound();
+}
+
 /// R6: this user may not do this action (someone else's entry, or the wrong role).
 final class NotAllowed extends DomainError {
   const NotAllowed();
