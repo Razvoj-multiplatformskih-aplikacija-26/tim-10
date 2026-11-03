@@ -117,8 +117,8 @@ class _QueueScreenState extends State<QueueScreen> {
               padding: const EdgeInsets.symmetric(vertical: 3),
               child: Row(
                 children: [
-                  SizedBox(width: 64, child: Text(key, style: AppText.cardTitle)),
-                  Text(meaning, style: AppText.body),
+                  SizedBox(width: 64, child: Text(key, style: Theme.of(context).textTheme.titleMedium)),
+                  Text(meaning, style: Theme.of(context).textTheme.bodyLarge),
                 ],
               ),
             ),
