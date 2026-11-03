@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ui/ui.dart';
 
 import '../dependencies.dart';
+import '../shortcuts.dart';
 import '../widgets/queue_skeleton.dart';
 import '../widgets/queue_table.dart';
 import '../widgets/reject_dialog.dart';
@@ -22,11 +23,86 @@ class QueueScreen extends StatefulWidget {
 }
 
 class _QueueScreenState extends State<QueueScreen> {
+  // Above the table and the list, so the keyboard keeps working when one replaces the other.
+  final _focus = FocusNode(debugLabel: 'queue');
+
   @override
   void initState() {
     super.initState();
     context.read<ReviewQueueBloc>().add(ReviewQueueRequested(selected: widget.selected));
   }
+
+  @override
+  void dispose() {
+    _focus.dispose();
+    super.dispose();
+  }
+
+  /// The queue, when it is on the screen. Shortcuts do nothing during loading and in the empty state.
+  ReviewQueueLoaded? get _queue => switch (context.read<ReviewQueueBloc>().state) {
+    final ReviewQueueLoaded queue => queue,
+    _ => null,
+  };
+
+  bool get _canDecide {
+    final queue = _queue;
+    return queue != null && queue.canDecide && !queue.isBusy;
+  }
+
+  void _open(EntryId id) {
+    _focus.requestFocus(); // after a click the arrows must still work
+    context.read<ReviewQueueBloc>().add(ReviewItemOpened(id));
+  }
+
+  Map<Type, Action<Intent>> _actions() {
+    final bloc = context.read<ReviewQueueBloc>();
+    return {
+      MoveCursorIntent: GuardedAction<MoveCursorIntent>(
+        enabled: () => _queue != null,
+        onInvoke: (intent) => bloc.add(ReviewCursorMoved(intent.delta)),
+      ),
+      OpenCursorIntent: GuardedAction<OpenCursorIntent>(
+        enabled: () => _queue != null && _focus.hasPrimaryFocus,
+        onInvoke: (_) => bloc.add(const ReviewCursorActivated()),
+      ),
+      ClosePanelIntent: GuardedAction<ClosePanelIntent>(
+        enabled: () => _queue?.isPanelOpen ?? false,
+        onInvoke: (_) => bloc.add(const ReviewPanelClosed()),
+      ),
+      PublishIntent: GuardedAction<PublishIntent>(
+        enabled: () => _canDecide,
+        onInvoke: (_) => _publish(_queue!.current.id),
+      ),
+      RejectIntent: GuardedAction<RejectIntent>(
+        enabled: () => _canDecide,
+        onInvoke: (_) => _reject(_queue!.current.id),
+      ),
+      ShowShortcutsIntent: CallbackAction<ShowShortcutsIntent>(onInvoke: (_) => _showShortcuts()),
+    };
+  }
+
+  Future<void> _showShortcuts() => showDialog<void>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Prečice'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (final (key, meaning) in queueShortcutsHelp)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 3),
+              child: Row(
+                children: [
+                  SizedBox(width: 64, child: Text(key, style: AppText.cardTitle)),
+                  Text(meaning, style: AppText.body),
+                ],
+              ),
+            ),
+        ],
+      ),
+    ),
+  );
 
   void _publish(EntryId id) => context.read<ReviewQueueBloc>().add(ProposalPublishRequested(id));
 
@@ -66,23 +142,42 @@ class _QueueScreenState extends State<QueueScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Red predloga')),
-      body: BlocConsumer<ReviewQueueBloc, ReviewQueueState>(
-        listener: _showNotice,
-        builder: (context, state) => switch (state) {
-          ReviewQueueLoading() => const QueueSkeleton(),
-          ReviewQueueFailure() => Center(
-            child: ErrorState(
-              title: 'Predlozi nisu učitani',
-              message: 'Nismo uspeli da dohvatimo red predloga.',
-              onRetry: () => context.read<ReviewQueueBloc>().add(ReviewQueueRequested(selected: widget.selected)),
+      appBar: AppBar(
+        title: const Text('Red predloga'),
+        actions: [TextButton(onPressed: _showShortcuts, child: const Text('Prečice (?)'))],
+      ),
+      body: Shortcuts(
+        shortcuts: queueShortcuts,
+        child: Actions(
+          actions: _actions(),
+          child: Focus(
+            focusNode: _focus,
+            autofocus: true,
+            child: BlocConsumer<ReviewQueueBloc, ReviewQueueState>(
+              listener: _showNotice,
+              builder: (context, state) => switch (state) {
+                ReviewQueueLoading() => const QueueSkeleton(),
+                ReviewQueueFailure() => Center(
+                  child: ErrorState(
+                    title: 'Predlozi nisu učitani',
+                    message: 'Nismo uspeli da dohvatimo red predloga.',
+                    onRetry: () => context.read<ReviewQueueBloc>().add(ReviewQueueRequested(selected: widget.selected)),
+                  ),
+                ),
+                ReviewQueueEmpty() => const Center(
+                  child: EmptyState(title: 'Red je prazan', message: 'Nijedan predlog ne čeka odluku urednika.'),
+                ),
+                ReviewQueueLoaded() => _QueueBody(
+                  state: state,
+                  focusNode: _focus,
+                  onOpen: _open,
+                  onPublish: _publish,
+                  onReject: _reject,
+                ),
+              },
             ),
           ),
-          ReviewQueueEmpty() => const Center(
-            child: EmptyState(title: 'Red je prazan', message: 'Nijedan predlog ne čeka odluku urednika.'),
-          ),
-          ReviewQueueLoaded() => _QueueBody(state: state, onPublish: _publish, onReject: _reject),
-        },
+        ),
       ),
     );
   }
@@ -90,9 +185,17 @@ class _QueueScreenState extends State<QueueScreen> {
 
 /// The table and, when a proposal is open, the panel next to it.
 class _QueueBody extends StatelessWidget {
-  const _QueueBody({required this.state, required this.onPublish, required this.onReject});
+  const _QueueBody({
+    required this.state,
+    required this.focusNode,
+    required this.onOpen,
+    required this.onPublish,
+    required this.onReject,
+  });
 
   final ReviewQueueLoaded state;
+  final FocusNode focusNode;
+  final ValueChanged<EntryId> onOpen;
   final ValueChanged<EntryId> onPublish;
   final ValueChanged<EntryId> onReject;
 
@@ -108,7 +211,7 @@ class _QueueBody extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                child: QueueTable(state: state, now: now, onOpen: (id) => bloc.add(ReviewItemOpened(id))),
+                child: QueueTable(state: state, now: now, focusNode: focusNode, onOpen: onOpen),
               ),
               if (state.isPanelOpen) ...[
                 const VerticalDivider(width: 1),

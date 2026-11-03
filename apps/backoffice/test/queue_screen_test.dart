@@ -3,6 +3,7 @@ import 'package:backoffice/dependencies.dart';
 import 'package:backoffice/widgets/queue_skeleton.dart';
 import 'package:backoffice/widgets/queue_table.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -168,6 +169,81 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Objavljeno u katalogu.'), findsOneWidget);
+    });
+  });
+
+  group('working with the keyboard only', () {
+    Future<void> loaded(WidgetTester tester) async {
+      useWideWindow(tester);
+      await tester.pumpWidget(appWith(fakeDependencies()));
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> press(WidgetTester tester, LogicalKeyboardKey key) async {
+      await tester.sendKeyEvent(key);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('the arrows and Enter open a proposal, and Esc closes it', (tester) async {
+      await loaded(tester);
+
+      await press(tester, LogicalKeyboardKey.arrowDown);
+      await press(tester, LogicalKeyboardKey.enter);
+      expect(find.text('Sastojci'), findsOneWidget); // p-2 is a recipe
+      expect(find.text('2. Dodaj paradajz i jaja.'), findsOneWidget);
+
+      await press(tester, LogicalKeyboardKey.escape);
+      expect(find.text('Sastojci'), findsNothing);
+    });
+
+    testWidgets('the open panel follows the cursor', (tester) async {
+      await loaded(tester);
+
+      await press(tester, LogicalKeyboardKey.enter);
+      expect(find.text('Kuhinja: domaća'), findsOneWidget);
+
+      await press(tester, LogicalKeyboardKey.arrowDown);
+      expect(find.text('Kuhinja: domaća'), findsNothing);
+      expect(find.text('Sastojci'), findsOneWidget);
+    });
+
+    testWidgets('O publishes the proposal under the cursor', (tester) async {
+      await loaded(tester);
+
+      await press(tester, LogicalKeyboardKey.keyO);
+
+      expect(find.text('Paprika'), findsNothing);
+      expect(find.text('Objavljeno u katalogu.'), findsOneWidget);
+    });
+
+    testWidgets('X asks for the reason, and the keyboard still works after the dialog', (tester) async {
+      await loaded(tester);
+
+      await press(tester, LogicalKeyboardKey.keyX);
+      await tester.enterText(find.byKey(const Key('reject-reason')), 'Video nije o hrani.');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Predlog je odbijen.'), findsOneWidget);
+      expect(find.text('Paprika'), findsNothing);
+
+      await press(tester, LogicalKeyboardKey.enter);
+      expect(find.text('Sastojci'), findsOneWidget); // the next proposal, p-2
+    });
+
+    testWidgets('the cursor scrolls the table to rows out of view', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(1280, 400);
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(appWith(fakeDependencies()));
+      await tester.pumpAndSettle();
+      expect(find.text('Kokos kari sa piletinom'), findsNothing);
+
+      for (var i = 0; i < 11; i++) {
+        await press(tester, LogicalKeyboardKey.arrowDown);
+      }
+
+      expect(find.text('Kokos kari sa piletinom'), findsOneWidget);
     });
   });
 }
