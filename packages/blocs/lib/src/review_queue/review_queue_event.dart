@@ -36,3 +36,26 @@ final class ReviewItemOpened extends ReviewQueueEvent {
 final class ReviewPanelClosed extends ReviewQueueEvent {
   const ReviewPanelClosed();
 }
+
+/// What an editor can decide about a proposal; each is one button, one shortcut and one transition.
+enum ReviewDecision { publish, reject }
+
+/// "Objavi" or the O key.
+final class ProposalPublishRequested extends ReviewQueueEvent {
+  const ProposalPublishRequested(this.id);
+
+  final EntryId id;
+}
+
+/// "Odbij" in the dialog, with a reason that has passed `RejectionReason.parse` (R8).
+final class ProposalRejectRequested extends ReviewQueueEvent {
+  const ProposalRejectRequested(this.id, this.reason);
+
+  final EntryId id;
+  final RejectionReason reason;
+}
+
+/// The screen has shown the notice (a SnackBar); the Bloc can forget it.
+final class ReviewNoticeAcknowledged extends ReviewQueueEvent {
+  const ReviewNoticeAcknowledged();
+}

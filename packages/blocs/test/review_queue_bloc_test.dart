@@ -146,4 +146,100 @@ void main() {
       expect: () => [const ReviewQueueLoading(), queue],
     );
   });
+
+  group('ReviewQueueBloc · decisions', () {
+    const first = EntryId('e-1');
+    final queue = ReviewQueueLoaded([item('e-1'), item('e-2')], canDecide: true);
+    final reason = RejectionReason.parse('Video nije o hrani.').valueOrNull!;
+
+    blocTest<ReviewQueueBloc, ReviewQueueState>(
+      'publishes, and the next proposal takes the place under the cursor',
+      build: () => blocWith(InMemoryReviewQueue([proposal('e-1'), proposal('e-2')])),
+      seed: () => queue.withPanel(isOpen: true),
+      act: (bloc) => bloc.add(const ProposalPublishRequested(first)),
+      expect: () => [
+        queue.withPanel(isOpen: true).busyWith(first),
+        ReviewQueueLoaded(
+          [item('e-2')],
+          canDecide: true,
+          isPanelOpen: true,
+          notice: const ReviewActionSucceeded(ReviewDecision.publish),
+        ),
+      ],
+    );
+
+    blocTest<ReviewQueueBloc, ReviewQueueState>(
+      'rejects with the reason',
+      build: () => blocWith(InMemoryReviewQueue([proposal('e-1'), proposal('e-2')])),
+      seed: () => queue,
+      act: (bloc) => bloc.add(ProposalRejectRequested(first, reason)),
+      skip: 1,
+      expect: () => [
+        ReviewQueueLoaded([item('e-2')], canDecide: true, notice: const ReviewActionSucceeded(ReviewDecision.reject)),
+      ],
+    );
+
+    blocTest<ReviewQueueBloc, ReviewQueueState>(
+      'the cursor moves up when the last row is gone',
+      build: () => blocWith(InMemoryReviewQueue([proposal('e-1'), proposal('e-2')])),
+      seed: () => queue.withCursor(1),
+      act: (bloc) => bloc.add(const ProposalPublishRequested(EntryId('e-2'))),
+      skip: 1,
+      verify: (bloc) {
+        final state = bloc.state as ReviewQueueLoaded;
+        expect(state.cursor, 0);
+        expect(state.current.id, first);
+      },
+    );
+
+    blocTest<ReviewQueueBloc, ReviewQueueState>(
+      'the last decision ends in the empty queue, with its notice',
+      build: () => blocWith(InMemoryReviewQueue([proposal('e-1')])),
+      seed: () => ReviewQueueLoaded([item('e-1')], canDecide: true),
+      act: (bloc) => bloc.add(const ProposalPublishRequested(first)),
+      skip: 1,
+      expect: () => [const ReviewQueueEmpty(notice: ReviewActionSucceeded(ReviewDecision.publish))],
+    );
+
+    blocTest<ReviewQueueBloc, ReviewQueueState>(
+      'shows the rule that said no, and keeps the queue',
+      build: () => blocWith(
+        InMemoryReviewQueue([proposal('e-1')]),
+        user: const User(id: UserId('ana'), role: Role.user),
+      ),
+      seed: () => queue,
+      act: (bloc) => bloc.add(const ProposalPublishRequested(first)),
+      skip: 1,
+      expect: () => [queue.withNotice(const ReviewActionRefused(NotAllowed()))],
+    );
+
+    blocTest<ReviewQueueBloc, ReviewQueueState>(
+      'a lost connection keeps the queue and offers the same request again',
+      build: () => blocWith(InMemoryReviewQueue([proposal('e-1')])..failNextCall = true),
+      seed: () => queue,
+      act: (bloc) => bloc.add(const ProposalPublishRequested(first)),
+      skip: 1,
+      verify: (bloc) {
+        final notice = (bloc.state as ReviewQueueLoaded).notice;
+        expect(notice, isA<ReviewActionFailed>());
+        expect((notice! as ReviewActionFailed).request, isA<ProposalPublishRequested>());
+      },
+    );
+
+    blocTest<ReviewQueueBloc, ReviewQueueState>(
+      'ignores a second decision while one is running',
+      build: () => blocWith(InMemoryReviewQueue([proposal('e-1'), proposal('e-2')])),
+      seed: () => queue.busyWith(first),
+      act: (bloc) => bloc.add(const ProposalPublishRequested(EntryId('e-2'))),
+      expect: () => <ReviewQueueState>[],
+    );
+
+    blocTest<ReviewQueueBloc, ReviewQueueState>(
+      'forgets the notice once it is shown',
+      build: () => blocWith(InMemoryReviewQueue()),
+      seed: () => queue.withNotice(const ReviewActionRefused(NotAllowed())),
+      act: (bloc) => bloc.add(const ReviewNoticeAcknowledged()),
+      expect: () => [queue],
+    );
+  });
 }
