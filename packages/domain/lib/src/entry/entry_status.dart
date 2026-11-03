@@ -9,6 +9,13 @@ enum AnalysisFailure { unavailable, notFood, unsupported, timeout }
 /// The state of an entry (README). Each state carries only its own data, always including when it started.
 sealed class EntryStatus {
   const EntryStatus();
+
+  /// R3 (README: "an entry being processed cannot be changed"). Our reading: waiting for the analysis counts too,
+  /// because the link is already with the server and a change could clash with an analysis that is just starting.
+  bool get isBeingAnalyzed => switch (this) {
+    Queued() || Analyzing() => true,
+    AwaitingReview() || Saved() || AnalysisFailed() || PendingApproval() || Published() || Rejected() => false,
+  };
 }
 
 /// Waiting for analysis: the link is with the server, the analysis has not started yet.

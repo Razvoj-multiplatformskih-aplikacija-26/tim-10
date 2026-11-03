@@ -30,6 +30,11 @@ final class InvalidTransition extends DomainError {
   int get hashCode => Object.hash(from, to);
 }
 
+/// R3: the entry is waiting for or going through the analysis, so it cannot be changed or deleted yet.
+final class EntryBeingAnalyzed extends DomainError {
+  const EntryBeingAnalyzed();
+}
+
 /// R1: the text is not a link at all.
 final class InvalidLink extends DomainError {
   const InvalidLink();
