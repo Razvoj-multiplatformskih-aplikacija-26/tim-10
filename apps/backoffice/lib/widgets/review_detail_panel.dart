@@ -8,16 +8,27 @@ import 'review_text.dart';
 ///
 /// It takes a [ReviewItem], which has no personal layer, so the user's notes cannot end up here (R7).
 class ReviewDetailPanel extends StatelessWidget {
-  const ReviewDetailPanel({super.key, required this.item, required this.now, required this.onClose});
+  const ReviewDetailPanel({
+    super.key,
+    required this.item,
+    required this.now,
+    required this.onClose,
+    required this.onPublish,
+    required this.onReject,
+  });
 
   final ReviewItem item;
   final DateTime now;
   final VoidCallback onClose;
 
+  /// `null` while a decision is running, or when the user may not decide: the button is then disabled.
+  final VoidCallback? onPublish;
+  final VoidCallback? onReject;
+
   @override
   Widget build(BuildContext context) {
     final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
-    return ListView(
+    final details = ListView(
       key: ValueKey(item.id.value),
       padding: const EdgeInsets.all(AppSpace.screen),
       children: [
@@ -44,6 +55,26 @@ class ReviewDetailPanel extends StatelessWidget {
           final RecipeContent recipe => _recipe(recipe),
           final RestaurantContent restaurant => _restaurant(restaurant),
         },
+      ],
+    );
+    return Column(
+      children: [
+        Expanded(child: details),
+        const Divider(height: 1),
+        Padding(
+          padding: const EdgeInsets.all(AppSpace.insideCard),
+          child: Row(
+            children: [
+              Expanded(
+                child: PrimaryButton(label: 'Objavi (O)', size: ButtonSize.md, expanded: true, onPressed: onPublish),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: GhostButton(label: 'Odbij (X)', size: ButtonSize.md, expanded: true, onPressed: onReject),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }

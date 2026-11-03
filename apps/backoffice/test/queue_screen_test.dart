@@ -1,4 +1,9 @@
+import 'package:backoffice/data/fake_review_queue.dart';
+import 'package:backoffice/dependencies.dart';
 import 'package:backoffice/widgets/queue_skeleton.dart';
+import 'package:backoffice/widgets/queue_table.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'support.dart';
@@ -87,6 +92,82 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Kuhinja: domaća'), findsNothing);
+    });
+  });
+
+  group('the decisions', () {
+    Future<void> openFirst(WidgetTester tester, {void Function(FakeReviewQueue)? setUp}) async {
+      useWideWindow(tester);
+      final dependencies = fakeDependencies();
+      setUp?.call(dependencies.fakeQueue!);
+      await tester.pumpWidget(appWith(dependencies));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Paprika'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('"Objavi" takes the proposal out of the queue and says so', (tester) async {
+      await openFirst(tester);
+
+      await tester.tap(find.text('Objavi (O)'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Paprika'), findsNothing);
+      expect(find.text('Objavljeno u katalogu.'), findsOneWidget);
+    });
+
+    testWidgets('"Odbij" asks for a reason, and an empty reason is refused with the text from ui', (tester) async {
+      await openFirst(tester);
+
+      await tester.tap(find.text('Odbij (X)'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Odbij'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Upiši razlog odbijanja.'), findsOneWidget);
+      expect(find.text('Paprika'), findsWidgets);
+    });
+
+    testWidgets('"Odbij" with a reason takes the proposal out of the queue', (tester) async {
+      await openFirst(tester);
+
+      await tester.tap(find.text('Odbij (X)'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('reject-reason')), 'Video nije o hrani.');
+      await tester.tap(find.text('Odbij'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Paprika'), findsNothing);
+      expect(find.text('Predlog je odbijen.'), findsOneWidget);
+    });
+
+    testWidgets('"Odustani" changes nothing', (tester) async {
+      await openFirst(tester);
+
+      await tester.tap(find.text('Odbij (X)'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Odustani'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Paprika'), findsWidgets);
+      expect(find.text('Predlog je odbijen.'), findsNothing);
+    });
+
+    testWidgets('a lost connection keeps the proposal and offers "Pokušaj ponovo"', (tester) async {
+      await openFirst(tester);
+      final fake = RepositoryProvider.of<AppDependencies>(tester.element(find.byType(QueueTable))).fakeQueue!;
+      fake.failingRequests = 1;
+
+      await tester.tap(find.text('Objavi (O)'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Nije sačuvano.'), findsOneWidget);
+      expect(find.text('Paprika'), findsWidgets);
+
+      await tester.tap(find.widgetWithText(SnackBarAction, 'Pokušaj ponovo'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Objavljeno u katalogu.'), findsOneWidget);
     });
   });
 }
