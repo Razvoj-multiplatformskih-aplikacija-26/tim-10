@@ -38,6 +38,14 @@ void main() {
       expect(awaitingReview().hashCode, awaitingReview().hashCode);
     });
 
+    test('"would return" has three answers, including "maybe"', () {
+      expect(WouldReturn.values, [WouldReturn.yes, WouldReturn.maybe, WouldReturn.no]);
+      expect(
+        const PersonalLayer(wouldReturn: WouldReturn.maybe),
+        isNot(const PersonalLayer(wouldReturn: WouldReturn.yes)),
+      );
+    });
+
     test('a new entry has no content and an empty personal layer', () {
       final queued = Entry(
         id: const EntryId('e-2'),

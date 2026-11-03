@@ -39,6 +39,9 @@ final class Manual extends EntrySource {
   int get hashCode => (Manual).hashCode;
 }
 
+/// Restaurant: "I would go back" (Da / Možda / Ne).
+enum WouldReturn { yes, maybe, no }
+
 /// What only the owner sees: never shown to an editor and never part of the catalog (R7).
 ///
 /// Kept apart from [Entry.content], so editing it never changes what the AI extracted. Photos come in KT3.
@@ -51,8 +54,7 @@ final class PersonalLayer {
   /// Restaurant: how much was spent, in dinars (money is an `int` in the smallest unit).
   final int? spent;
 
-  /// Restaurant: "I would go back".
-  final bool? wouldReturn;
+  final WouldReturn? wouldReturn;
 
   /// Recipe: the user's own changes.
   final String? modifications;
