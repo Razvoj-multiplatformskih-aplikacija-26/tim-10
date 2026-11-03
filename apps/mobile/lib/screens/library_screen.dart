@@ -1,4 +1,5 @@
 import 'package:blocs/blocs.dart';
+import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +7,7 @@ import 'package:ui/ui.dart';
 
 import '../router.dart';
 import '../widgets/debug_menu.dart';
+import '../widgets/entry_text.dart';
 import '../widgets/entry_tile.dart';
 
 /// M-03, the start screen. It only draws the state of the Bloc and sends events; the four states are a `switch`
@@ -116,16 +118,62 @@ class _Loaded extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bloc = context.read<EntriesBloc>();
+    final visible = state.visible;
     return RefreshIndicator(
       onRefresh: () async {
-        final bloc = context.read<EntriesBloc>();
         bloc.add(const EntriesRequested());
         await bloc.stream.firstWhere((state) => state is! EntriesLoading);
       },
       child: ListView(
+        padding: const EdgeInsets.only(bottom: AppSpace.betweenCards),
         children: [
           const _Title(),
-          for (final entry in state.visible)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpace.screen),
+            child: SegmentedTabs(
+              labels: const ['Sve', 'Recepti', 'Restorani'],
+              selectedIndex: state.kind.index,
+              onSelected: (index) => bloc.add(EntriesKindFilterChanged(KindFilter.values[index])),
+            ),
+          ),
+          const SizedBox(height: 4),
+          FilterChips(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpace.screen),
+            items: [
+              FilterChipItem(label: 'Za pregled', count: _countOrNull(StatusFilter.forReview), highlighted: true),
+              FilterChipItem(label: 'U obradi', count: _countOrNull(StatusFilter.processing)),
+              const FilterChipItem(label: 'Sačuvano'),
+              const FilterChipItem(label: 'U katalogu'),
+              const FilterChipItem(label: 'Odbijeno'),
+            ],
+            selectedIndex: state.status?.index,
+            onSelected: (index) => bloc.add(EntriesStatusFilterToggled(StatusFilter.values[index])),
+          ),
+          if (state.forReviewCount > 0 && state.status != StatusFilter.forReview)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(AppSpace.screen, 6, AppSpace.screen, 0),
+              child: ReviewBanner(
+                title: _reviewTitle(state.forReviewCount),
+                message: 'Proveri šta smo izdvojili i sačuvaj.',
+                photos: [
+                  for (final entry in state.entries)
+                    if (entry.status is AwaitingReview) ?photoOf(entry),
+                ].take(2).toList(),
+                onPressed: () => bloc.add(const EntriesStatusFilterToggled(StatusFilter.forReview)),
+              ),
+            ),
+          const SizedBox(height: AppSpace.betweenCards),
+          if (visible.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(AppSpace.screen),
+              child: Text(
+                'Nema unosa za ovaj izbor.',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+            ),
+          for (final entry in visible)
             Padding(
               padding: const EdgeInsets.fromLTRB(AppSpace.screen, 0, AppSpace.screen, AppSpace.betweenCards),
               child: EntryTile(key: ValueKey(entry.id.value), entry: entry),
@@ -134,4 +182,16 @@ class _Loaded extends StatelessWidget {
       ),
     );
   }
+
+  int? _countOrNull(StatusFilter chip) {
+    final count = state.countFor(chip);
+    return count == 0 ? null : count;
+  }
 }
+
+/// "1 video čeka pregled", "2 videa čekaju pregled", "5 videa čeka pregled".
+String _reviewTitle(int count) => switch (count) {
+  1 => '1 video čeka pregled',
+  2 || 3 || 4 => '$count videa čekaju pregled',
+  _ => '$count videa čeka pregled',
+};

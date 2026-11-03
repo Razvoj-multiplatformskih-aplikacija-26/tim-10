@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/seed.dart';
+import 'package:ui/ui.dart';
 
 import 'support.dart';
 
@@ -92,6 +93,44 @@ void main() {
       expect(find.text('Za pregled'), findsWidgets);
       expect(find.text('Čeka analizu'), findsWidgets);
       expect(find.text('Izdvajamo recept iz videa'), findsOneWidget);
+    });
+  });
+
+  group('the filters', () {
+    Future<void> loaded(WidgetTester tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(700, 6000);
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(appWith(fakeDependencies()));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('the segment "Restorani" hides the recipes', (tester) async {
+      await loaded(tester);
+      expect(find.text('Salata od leblebija'), findsNothing); // only after the video is analysed
+      final allCards = find.byType(EntryCard).evaluate().length;
+
+      await tester.tap(find.text('Restorani'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(EntryCard).evaluate().length, lessThan(allCards));
+      expect(find.text('Recept'), findsNothing);
+    });
+
+    testWidgets('the banner shows only the entries waiting for review, and tapping the chip again shows all', (
+      tester,
+    ) async {
+      await loaded(tester);
+      final allCards = find.byType(EntryCard).evaluate().length;
+
+      await tester.tap(find.text('Pregledaj'));
+      await tester.pumpAndSettle();
+      expect(find.byType(EntryCard).evaluate().length, lessThan(allCards));
+      expect(find.text('Sačuvano'), findsOneWidget); // only the chip; no card has this state now
+
+      await tester.tap(find.text('Za pregled').first);
+      await tester.pumpAndSettle();
+      expect(find.byType(EntryCard).evaluate().length, allCards);
     });
   });
 }
