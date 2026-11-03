@@ -1,3 +1,4 @@
+import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 
 import '../theme/app_icons.dart';
@@ -9,6 +10,18 @@ import 'app_icon.dart';
 ///
 /// Temporary: once the domain exists, `StatusBadge` takes `EntryStatus` and this enum goes away.
 enum BadgeStatus { queued, analyzing, awaitingReview, saved, analysisFailed, pendingApproval, published, rejected }
+
+/// The badge of a state from the domain. No `default`: a new state stops the compiler here.
+BadgeStatus badgeStatusOf(EntryStatus status) => switch (status) {
+  Queued() => BadgeStatus.queued,
+  Analyzing() => BadgeStatus.analyzing,
+  AwaitingReview() => BadgeStatus.awaitingReview,
+  Saved() => BadgeStatus.saved,
+  AnalysisFailed() => BadgeStatus.analysisFailed,
+  PendingApproval() => BadgeStatus.pendingApproval,
+  Published() => BadgeStatus.published,
+  Rejected() => BadgeStatus.rejected,
+};
 
 /// Status of an entry, top right on a card.
 class StatusBadge extends StatelessWidget {
