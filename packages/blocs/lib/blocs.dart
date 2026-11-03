@@ -4,4 +4,5 @@
 library;
 
 export 'src/entries/entries_bloc.dart';
+export 'src/review_queue/review_queue_bloc.dart';
 export 'src/submit_link/submit_link_bloc.dart';
