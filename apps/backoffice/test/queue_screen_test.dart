@@ -45,7 +45,7 @@ void main() {
       await tester.pumpWidget(appWith(dependencies));
       await tester.pumpAndSettle();
 
-      expect(find.text('Red je prazan'), findsOneWidget);
+      expect(find.text('Red je prazan. Svaka čast!'), findsOneWidget);
     });
   });
 
@@ -72,6 +72,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining('rođendan'), findsNothing);
+      expect(find.text('Lični podaci korisnika nisu vidljivi uredniku'), findsOneWidget);
     });
 
     testWidgets('puts a possible duplicate next to the proposal (R5)', (tester) async {
@@ -405,7 +406,7 @@ void main() {
       await choose(tester, 'Prazan odgovor');
       await choose(tester, 'Osveži');
 
-      expect(find.text('Red je prazan'), findsOneWidget);
+      expect(find.text('Red je prazan. Svaka čast!'), findsOneWidget);
     });
 
     testWidgets('"Prečice" lists the keys', (tester) async {

@@ -50,6 +50,10 @@ class ReviewDetailPanel extends StatelessWidget {
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: secondary),
         ),
         Text(_sourceText(item.source), style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: secondary)),
+        Text(
+          'Lični podaci korisnika nisu vidljivi uredniku',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: secondary),
+        ),
         const SizedBox(height: 16),
         ...switch (item.content) {
           final RecipeContent recipe => _recipe(recipe),

@@ -196,7 +196,7 @@ class _QueueScreenState extends State<QueueScreen> {
                   ),
                 ),
                 ReviewQueueEmpty() => const Center(
-                  child: EmptyState(title: 'Red je prazan', message: 'Nijedan predlog ne čeka odluku urednika.'),
+                  child: EmptyState(title: 'Red je prazan. Svaka čast!', message: 'Nijedan predlog ne čeka odluku urednika.'),
                 ),
                 ReviewQueueLoaded() => _QueueBody(
                   state: state,
