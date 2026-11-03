@@ -33,6 +33,25 @@ Unosi koje korisnici predloze i urednici odobre cine zajednicki javni katalog re
 | Server | ostali delovi sistema | Relic, PostgreSQL | Linux, Windows |
 | Domenski paket | svi delovi sistema | Dart | sve |
 
+## Pokretanje iz čistog klona
+
+```bash
+flutter pub get            # iz korena, jednom za ceo workspace
+cd apps/mobile
+flutter run                # Android emulator ili telefon
+```
+
+Podaci su lažni i u memoriji; server stiže u KT2. Linkovi za probu forme „Dodaj video”:
+
+| Link | Šta se dešava |
+| --- | --- |
+| `https://www.instagram.com/reel/CSalate2026/` | čeka analizu, pa dva recepta „Za pregled” (povuci listu nadole posle par sekundi) |
+| `https://www.instagram.com/reel/CDorcolTop2/` | video je već analiziran kod drugog korisnika, rezultat je odmah tu |
+| bilo koji drugi Instagram ili TikTok link | analiza ne uspe: „U videu nismo prepoznali recept ni restoran” |
+| `palacinke` | greška u formi: nije link |
+
+U debug režimu meni „Još” u Biblioteci ima „Simuliraj grešku” i „Prazan odgovor”, a posle njih ide „Osveži”.
+
 ## Backoffice
 
 Red predloga za urednike: tabela na širokom prozoru, lista ispod 840 px, detalj u panelu.

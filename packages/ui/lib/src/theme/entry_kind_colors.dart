@@ -1,3 +1,4 @@
+import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
@@ -6,6 +7,13 @@ import 'app_colors.dart';
 ///
 /// Temporary: once the domain exists, the type comes from the entry's content.
 enum EntryCardKind { recipe, restaurant, unknown }
+
+/// The kind of an entry from its content; while the analysis runs there is no content yet.
+EntryCardKind cardKindOf(EntryContent? content) => switch (content) {
+  RecipeContent() => EntryCardKind.recipe,
+  RestaurantContent() => EntryCardKind.restaurant,
+  null => EntryCardKind.unknown,
+};
 
 /// Colors of the entry types (card rim and type label), as a theme extension.
 @immutable

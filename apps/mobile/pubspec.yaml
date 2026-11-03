@@ -15,6 +15,8 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_bloc: 9.1.1
+  flutter_localizations:
+    sdk: flutter
   go_router: 18.0.2
   ui:
     path: ../../packages/ui
@@ -22,6 +24,7 @@ dependencies:
     path: ../../packages/use_cases
 
 dev_dependencies:
+  flutter_launcher_icons: 0.14.4
   flutter_lints: 6.0.0
   flutter_test:
     sdk: flutter
@@ -30,3 +33,11 @@ flutter:
   uses-material-design: true
   assets:
     - assets/demo/
+
+# The app icon (KT1). Regenerate with: dart run flutter_launcher_icons
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/icon/icon.png
+  remove_alpha_ios: true
+  min_sdk_android: 21
