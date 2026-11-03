@@ -2,9 +2,11 @@ import 'package:blocs/blocs.dart';
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:ui/ui.dart';
 
 import '../dependencies.dart';
+import '../router.dart';
 import '../shortcuts.dart';
 import '../widgets/queue_list.dart';
 import '../widgets/queue_skeleton.dart';
@@ -31,6 +33,25 @@ class _QueueScreenState extends State<QueueScreen> {
   void initState() {
     super.initState();
     context.read<ReviewQueueBloc>().add(ReviewQueueRequested(selected: widget.selected));
+  }
+
+  /// From the address to the Bloc: a pasted link, or the back button of the browser.
+  @override
+  void didUpdateWidget(QueueScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final selected = widget.selected;
+    if (selected == oldWidget.selected) return;
+    context.read<ReviewQueueBloc>().add(selected == null ? const ReviewPanelClosed() : ReviewItemOpened(selected));
+  }
+
+  /// From the Bloc to the address, so the open proposal survives a refresh of the page.
+  void _syncAddress(BuildContext context, ReviewQueueState state) {
+    final selected = switch (state) {
+      ReviewQueueLoaded(:final selectedId) => selectedId,
+      ReviewQueueEmpty() => null,
+      ReviewQueueLoading() || ReviewQueueFailure() => widget.selected,
+    };
+    if (selected != widget.selected) context.go(queueLocation(selected));
   }
 
   @override
@@ -155,7 +176,10 @@ class _QueueScreenState extends State<QueueScreen> {
             focusNode: _focus,
             autofocus: true,
             child: BlocConsumer<ReviewQueueBloc, ReviewQueueState>(
-              listener: _showNotice,
+              listener: (context, state) {
+                _syncAddress(context, state);
+                _showNotice(context, state);
+              },
               builder: (context, state) => switch (state) {
                 ReviewQueueLoading() => const QueueSkeleton(),
                 ReviewQueueFailure() => Center(

@@ -1,5 +1,6 @@
 import 'package:backoffice/data/fake_review_queue.dart';
 import 'package:backoffice/dependencies.dart';
+import 'package:backoffice/screens/queue_screen.dart';
 import 'package:backoffice/widgets/queue_list.dart';
 import 'package:backoffice/widgets/queue_skeleton.dart';
 import 'package:backoffice/widgets/queue_table.dart';
@@ -8,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 
 import 'support.dart';
 
@@ -313,6 +315,66 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Kokos kari sa piletinom'), findsOneWidget);
+    });
+  });
+
+  group('the address', () {
+    String addressOf(WidgetTester tester) =>
+        GoRouter.of(tester.element(find.byType(QueueScreen))).routeInformationProvider.value.uri.toString();
+
+    testWidgets('a link with a selection opens that proposal', (tester) async {
+      useWideWindow(tester);
+      await tester.pumpWidget(appWith(fakeDependencies(), location: '/queue?entry=p-2'));
+      await tester.pumpAndSettle();
+
+      expect(find.descendant(of: find.byType(ReviewDetailPanel), matching: find.text('Šakšuka')), findsOneWidget);
+    });
+
+    testWidgets('opening and closing a proposal changes the address', (tester) async {
+      useWideWindow(tester);
+      await tester.pumpWidget(appWith(fakeDependencies()));
+      await tester.pumpAndSettle();
+      expect(addressOf(tester), '/queue');
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      expect(addressOf(tester), '/queue?entry=p-1');
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      expect(addressOf(tester), '/queue?entry=p-2');
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      expect(addressOf(tester), '/queue');
+    });
+
+    testWidgets('a new address opens that proposal', (tester) async {
+      useWideWindow(tester);
+      await tester.pumpWidget(appWith(fakeDependencies()));
+      await tester.pumpAndSettle();
+
+      GoRouter.of(tester.element(find.byType(QueueScreen))).go('/queue?entry=p-2');
+      await tester.pumpAndSettle();
+
+      expect(find.descendant(of: find.byType(ReviewDetailPanel), matching: find.text('Šakšuka')), findsOneWidget);
+    });
+
+    testWidgets('an old link opens nothing and cleans the address', (tester) async {
+      useWideWindow(tester);
+      await tester.pumpWidget(appWith(fakeDependencies(), location: '/queue?entry=p-99'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ReviewDetailPanel), findsNothing);
+      expect(addressOf(tester), '/queue');
+    });
+
+    testWidgets('the root address goes to the queue', (tester) async {
+      useWideWindow(tester);
+      await tester.pumpWidget(appWith(fakeDependencies(), location: '/'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(QueueTable), findsOneWidget);
     });
   });
 }
