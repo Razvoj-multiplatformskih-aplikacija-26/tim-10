@@ -32,7 +32,7 @@ final class ReviewQueueEmpty extends ReviewQueueState {
 }
 
 final class ReviewQueueLoaded extends ReviewQueueState {
-  const ReviewQueueLoaded(this.items, {this.canDecide = false});
+  const ReviewQueueLoaded(this.items, {this.canDecide = false, this.cursor = 0, this.isPanelOpen = false});
 
   /// The proposals, oldest first.
   final List<ReviewItem> items;
@@ -40,9 +40,32 @@ final class ReviewQueueLoaded extends ReviewQueueState {
   /// Whether the signed-in user may publish and reject. The domain answers; the screen only draws it.
   final bool canDecide;
 
-  @override
-  List<Object?> get props => [items, canDecide];
+  /// The index of the row the keyboard is on. Always a valid index, because this state always has rows.
+  final int cursor;
+
+  /// Whether the detail of the row under the cursor is shown.
+  final bool isPanelOpen;
+
+  /// The proposal under the cursor. "Objavi" and "Odbij" act on this one.
+  ReviewItem get current => items[cursor];
+
+  /// The proposal in the panel, or `null` when the panel is closed. This is what the address shows.
+  EntryId? get selectedId => isPanelOpen ? current.id : null;
+
+  /// The same queue with the cursor on [index]; past the first or the last row it stays there.
+  ReviewQueueLoaded withCursor(int index) => ReviewQueueLoaded(
+    items,
+    canDecide: canDecide,
+    cursor: index.clamp(0, items.length - 1),
+    isPanelOpen: isPanelOpen,
+  );
+
+  ReviewQueueLoaded withPanel({required bool isOpen}) =>
+      ReviewQueueLoaded(items, canDecide: canDecide, cursor: cursor, isPanelOpen: isOpen);
 
   @override
-  String toString() => 'ReviewQueueLoaded(${items.length} items)';
+  List<Object?> get props => [items, canDecide, cursor, isPanelOpen];
+
+  @override
+  String toString() => 'ReviewQueueLoaded(${items.length} items, cursor $cursor${isPanelOpen ? ', panel open' : ''})';
 }

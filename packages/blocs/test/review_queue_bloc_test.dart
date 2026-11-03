@@ -77,4 +77,73 @@ void main() {
       ],
     );
   });
+
+  group('ReviewQueueBloc · cursor and panel', () {
+    final items = [item('e-1'), item('e-2'), item('e-3')];
+    final queue = ReviewQueueLoaded(items, canDecide: true);
+
+    ReviewQueueBloc three() => blocWith(InMemoryReviewQueue([proposal('e-1'), proposal('e-2'), proposal('e-3')]));
+
+    blocTest<ReviewQueueBloc, ReviewQueueState>(
+      'moves the cursor down and up',
+      build: three,
+      seed: () => queue,
+      act: (bloc) => bloc
+        ..add(const ReviewCursorMoved(1))
+        ..add(const ReviewCursorMoved(1))
+        ..add(const ReviewCursorMoved(-1)),
+      expect: () => [queue.withCursor(1), queue.withCursor(2), queue.withCursor(1)],
+    );
+
+    blocTest<ReviewQueueBloc, ReviewQueueState>(
+      'stops at the first row and at the last row',
+      build: three,
+      seed: () => queue.withCursor(2),
+      act: (bloc) => bloc
+        ..add(const ReviewCursorMoved(1))
+        ..add(const ReviewCursorMoved(-5)),
+      expect: () => [queue],
+    );
+
+    blocTest<ReviewQueueBloc, ReviewQueueState>(
+      'Enter opens the row under the cursor, and Esc closes the panel without moving the cursor',
+      build: three,
+      seed: () => queue.withCursor(1),
+      act: (bloc) => bloc
+        ..add(const ReviewCursorActivated())
+        ..add(const ReviewPanelClosed()),
+      expect: () => [queue.withCursor(1).withPanel(isOpen: true), queue.withCursor(1)],
+      verify: (bloc) => expect((bloc.state as ReviewQueueLoaded).selectedId, isNull),
+    );
+
+    blocTest<ReviewQueueBloc, ReviewQueueState>(
+      'the open panel follows the cursor',
+      build: three,
+      seed: () => queue.withPanel(isOpen: true),
+      act: (bloc) => bloc.add(const ReviewCursorMoved(1)),
+      verify: (bloc) => expect((bloc.state as ReviewQueueLoaded).selectedId, const EntryId('e-2')),
+    );
+
+    blocTest<ReviewQueueBloc, ReviewQueueState>(
+      'a click opens that row and puts the cursor on it',
+      build: three,
+      seed: () => queue,
+      act: (bloc) => bloc.add(const ReviewItemOpened(EntryId('e-3'))),
+      expect: () => [queue.withCursor(2).withPanel(isOpen: true)],
+    );
+
+    blocTest<ReviewQueueBloc, ReviewQueueState>(
+      'a link with a selection opens that proposal after loading',
+      build: three,
+      act: (bloc) => bloc.add(const ReviewQueueRequested(selected: EntryId('e-2'))),
+      expect: () => [const ReviewQueueLoading(), queue.withCursor(1).withPanel(isOpen: true)],
+    );
+
+    blocTest<ReviewQueueBloc, ReviewQueueState>(
+      'an old link to a proposal that is gone opens nothing',
+      build: three,
+      act: (bloc) => bloc.add(const ReviewQueueRequested(selected: EntryId('e-9'))),
+      expect: () => [const ReviewQueueLoading(), queue],
+    );
+  });
 }
