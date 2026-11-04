@@ -126,6 +126,28 @@ void main() {
       expect(find.text(_titleOf(saved)), findsNothing);
     });
 
+    testWidgets('deleting the last entry goes back to the empty library and says so', (tester) async {
+      useTallPhone(tester);
+      final dependencies = fakeDependencies();
+      await tester.pumpWidget(appWith(dependencies));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(_titleOf(withStatus<Saved>())).first);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Još'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Obriši'));
+      await tester.pumpAndSettle();
+      dependencies.fakeEntries!.emptyResponses = 1; // the reload after the delete finds nothing left
+      await tester.tap(find.text('Obriši'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Unos je obrisan.'), findsOneWidget);
+      expect(find.byTooltip('Nazad'), findsNothing);
+      expect(find.text('Podeli prvi video sa hranom'), findsOneWidget);
+      expect(find.text('Dodaj link'), findsOneWidget);
+    });
+
     testWidgets('an entry being analysed has no actions (R3)', (tester) async {
       await open(tester, withStatus<Analyzing>());
 

@@ -25,10 +25,13 @@ final class EntriesFailure extends EntriesState {
 
 /// The user has no entries yet; the screen invites them to add the first video.
 final class EntriesEmpty extends EntriesState {
-  const EntriesEmpty();
+  const EntriesEmpty({this.notice});
+
+  /// A one-time message: deleting the last entry ends here, and it still has to say so.
+  final EntriesNotice? notice;
 
   @override
-  List<Object?> get props => [];
+  List<Object?> get props => [notice];
 }
 
 final class EntriesLoaded extends EntriesState {
