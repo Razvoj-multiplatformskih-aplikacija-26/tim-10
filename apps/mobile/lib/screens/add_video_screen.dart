@@ -21,6 +21,9 @@ class AddVideoScreen extends StatefulWidget {
 class _AddVideoScreenState extends State<AddVideoScreen> {
   final _link = TextEditingController();
 
+  /// The SnackBar on screen offers "Pokušaj ponovo". The messenger outlives this form, its Bloc does not.
+  bool _offersRetry = false;
+
   @override
   void dispose() {
     _link.dispose();
@@ -33,9 +36,12 @@ class _AddVideoScreenState extends State<AddVideoScreen> {
 
     final bloc = context.read<SubmitLinkBloc>();
     final messenger = ScaffoldMessenger.of(context);
-    void show(String text, {SnackBarAction? action}) => messenger
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(text), action: action));
+    void show(String text, {SnackBarAction? action}) {
+      _offersRetry = action != null;
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(text), action: action));
+    }
 
     switch (notice) {
       case SubmitSucceeded(:final alreadyAnalyzed):
@@ -51,7 +57,12 @@ class _AddVideoScreenState extends State<AddVideoScreen> {
       case SubmitFailed():
         show(
           'Slanje nije uspelo. Proveri internet vezu.',
-          action: SnackBarAction(label: 'Pokušaj ponovo', onPressed: () => bloc.add(const LinkSubmitted())),
+          action: SnackBarAction(
+            label: 'Pokušaj ponovo',
+            onPressed: () {
+              if (!bloc.isClosed) bloc.add(const LinkSubmitted());
+            },
+          ),
         );
     }
     bloc.add(const SubmitLinkNoticeAcknowledged());
@@ -68,60 +79,65 @@ class _AddVideoScreenState extends State<AddVideoScreen> {
         final now = context.read<AppDependencies>().clock.now();
         final linkError = state.linkError;
         final limitError = state.limitError;
-        return Scaffold(
-          appBar: AppBar(
-            automaticallyImplyLeading: false,
-            leading: IconButton(
-              tooltip: 'Zatvori',
-              icon: const AppIcon(AppIcons.close),
-              onPressed: state.isSending ? null : () => context.pop(),
+        return PopScope(
+          onPopInvokedWithResult: (didPop, _) {
+            if (didPop && _offersRetry) ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          },
+          child: Scaffold(
+            appBar: AppBar(
+              automaticallyImplyLeading: false,
+              leading: IconButton(
+                tooltip: 'Zatvori',
+                icon: const AppIcon(AppIcons.close),
+                onPressed: state.isSending ? null : () => context.pop(),
+              ),
             ),
-          ),
-          body: ListView(
-            padding: const EdgeInsets.fromLTRB(AppSpace.screen, 0, AppSpace.screen, AppSpace.screen),
-            children: [
-              Text('Dodaj video', style: theme.textTheme.headlineLarge),
-              const SizedBox(height: 8),
-              Text(
-                'Nalepi link sa Instagrama ili TikToka. Mi izdvojimo recept ili restoran, a ti potvrdiš.',
-                style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-              ),
-              const SizedBox(height: 20),
-              LinkField(
-                controller: _link,
-                autofocus: true,
-                enabled: !state.isSending,
-                isValid: state.link != null,
-                errorText: linkError == null ? null : domainErrorText(linkError, now: now),
-                onChanged: (text) => bloc.add(LinkChanged(text)),
-              ),
-              if (state.link case final link?) ...[
-                const SizedBox(height: 12),
-                _RecognizedVideo(link: link, isSending: state.isSending),
-              ],
-              const SizedBox(height: 12),
-              if (state.remaining case final remaining?)
-                _DailyQuota(
-                  remaining: remaining,
-                  limitText: limitError == null ? null : domainErrorText(limitError, now: now),
+            body: ListView(
+              padding: const EdgeInsets.fromLTRB(AppSpace.screen, 0, AppSpace.screen, AppSpace.screen),
+              children: [
+                Text('Dodaj video', style: theme.textTheme.headlineLarge),
+                const SizedBox(height: 8),
+                Text(
+                  'Nalepi link sa Instagrama ili TikToka. Mi izdvojimo recept ili restoran, a ti potvrdiš.',
+                  style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
-            ],
-          ),
-          bottomNavigationBar: SafeArea(
-            top: false,
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                AppSpace.screen,
-                8,
-                AppSpace.screen,
-                10 + MediaQuery.viewInsetsOf(context).bottom,
-              ),
-              child: PrimaryButton(
-                label: state.isSending ? 'Šaljemo…' : 'Analiziraj video',
-                size: ButtonSize.xl,
-                expanded: true,
-                isBusy: state.isSending,
-                onPressed: state.canSubmit ? () => bloc.add(const LinkSubmitted()) : null,
+                const SizedBox(height: 20),
+                LinkField(
+                  controller: _link,
+                  autofocus: true,
+                  enabled: !state.isSending,
+                  isValid: state.link != null,
+                  errorText: linkError == null ? null : domainErrorText(linkError, now: now),
+                  onChanged: (text) => bloc.add(LinkChanged(text)),
+                ),
+                if (state.link case final link?) ...[
+                  const SizedBox(height: 12),
+                  _RecognizedVideo(link: link, isSending: state.isSending),
+                ],
+                const SizedBox(height: 12),
+                if (state.remaining case final remaining?)
+                  _DailyQuota(
+                    remaining: remaining,
+                    limitText: limitError == null ? null : domainErrorText(limitError, now: now),
+                  ),
+              ],
+            ),
+            bottomNavigationBar: SafeArea(
+              top: false,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  AppSpace.screen,
+                  8,
+                  AppSpace.screen,
+                  10 + MediaQuery.viewInsetsOf(context).bottom,
+                ),
+                child: PrimaryButton(
+                  label: state.isSending ? 'Šaljemo…' : 'Analiziraj video',
+                  size: ButtonSize.xl,
+                  expanded: true,
+                  isBusy: state.isSending,
+                  onPressed: state.canSubmit ? () => bloc.add(const LinkSubmitted()) : null,
+                ),
               ),
             ),
           ),

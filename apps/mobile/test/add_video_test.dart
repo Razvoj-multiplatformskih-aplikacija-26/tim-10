@@ -1,6 +1,8 @@
 import 'package:domain/domain.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/seed.dart';
+import 'package:mobile/dependencies.dart';
 import 'package:ui/ui.dart';
 
 import 'support.dart';
@@ -98,6 +100,71 @@ void main() {
 
       expect(find.text('Slanje nije uspelo. Proveri internet vezu.'), findsOneWidget);
       expect(find.text('Video je prepoznat'), findsOneWidget);
+    });
+
+    Future<AppDependencies> failToSend(WidgetTester tester) async {
+      usePhoneSize(tester);
+      final dependencies = fakeDependencies();
+      await tester.pumpWidget(appWith(dependencies));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Dodaj'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(LinkField), knownVideoUrl);
+      await tester.pumpAndSettle();
+      dependencies.fakeEntries!.failingRequests = 1;
+      await tester.tap(find.text('Analiziraj video'));
+      await tester.pumpAndSettle();
+      return dependencies;
+    }
+
+    testWidgets('closing the form takes its "Pokušaj ponovo" with it', (tester) async {
+      await failToSend(tester);
+
+      await tester.tap(find.byTooltip('Zatvori'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Dodaj video'), findsNothing);
+      expect(find.text('Pokušaj ponovo'), findsNothing);
+    });
+
+    testWidgets('the system back button takes "Pokušaj ponovo" with it too', (tester) async {
+      await failToSend(tester);
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Dodaj video'), findsNothing);
+      expect(find.text('Pokušaj ponovo'), findsNothing);
+    });
+
+    testWidgets('"Pokušaj ponovo" sends again, and the success message outlives the form', (tester) async {
+      await failToSend(tester);
+
+      await tester.tap(find.text('Pokušaj ponovo'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Dodaj video'), findsNothing);
+      expect(find.text('Analiziramo video. Javićemo kad bude gotovo.'), findsOneWidget);
+    });
+
+    testWidgets('a new video is not hidden by the filter picked before adding it', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(700, 6000);
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(appWith(fakeDependencies()));
+      await tester.pumpAndSettle();
+      final allCards = find.byType(EntryCard).evaluate().length;
+
+      await tester.tap(find.text('Restorani'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Dodaj'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(LinkField), knownVideoUrl);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Analiziraj video'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(EntryCard).evaluate().length, allCards + 1);
     });
 
     testWidgets('"Dodaj" in the tab bar opens the form', (tester) async {
