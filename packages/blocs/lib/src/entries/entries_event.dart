@@ -5,8 +5,12 @@ sealed class EntriesEvent {
 }
 
 /// The library was opened, or the user tapped "Pokušaj ponovo": both load the entries the same way.
+///
+/// The filters stay, unless [showAll] asks to clear them: a video just added must not hide behind a chip.
 final class EntriesRequested extends EntriesEvent {
-  const EntriesRequested();
+  const EntriesRequested({this.showAll = false});
+
+  final bool showAll;
 }
 
 /// What the owner can do with an entry; each is one button and one transition.

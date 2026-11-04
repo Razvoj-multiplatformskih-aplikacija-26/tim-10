@@ -110,5 +110,46 @@ void main() {
             .having((s) => ids(s.visible), 'visible', isEmpty), // the saved recipe left "Za pregled"
       ],
     );
+
+    blocTest<EntriesBloc, EntriesState>(
+      'the filters stay after a refresh',
+      build: () => blocWith(InMemoryEntryRepository(library)),
+      seed: () => EntriesLoaded(library, kind: KindFilter.recipes, status: StatusFilter.forReview),
+      act: (bloc) => bloc.add(const EntriesRequested()),
+      expect: () => [
+        const EntriesLoading(),
+        isA<EntriesLoaded>()
+            .having((s) => s.kind, 'kind', KindFilter.recipes)
+            .having((s) => s.status, 'status', StatusFilter.forReview),
+      ],
+    );
+
+    test('the filters survive a failed refresh and "Pokušaj ponovo"', () async {
+      final repository = InMemoryEntryRepository(library);
+      final bloc = blocWith(repository)..add(const EntriesRequested());
+      await bloc.stream.firstWhere((state) => state is EntriesLoaded);
+      bloc.add(const EntriesStatusFilterToggled(StatusFilter.saved));
+      await bloc.stream.first;
+
+      repository.failNextCall = true;
+      bloc.add(const EntriesRequested());
+      await bloc.stream.firstWhere((state) => state is EntriesFailure);
+      bloc.add(const EntriesRequested());
+      final loaded = await bloc.stream.firstWhere((state) => state is EntriesLoaded) as EntriesLoaded;
+
+      expect(loaded.status, StatusFilter.saved);
+      await bloc.close();
+    });
+
+    blocTest<EntriesBloc, EntriesState>(
+      'a request to show everything clears the filters, so a new video is not hidden',
+      build: () => blocWith(InMemoryEntryRepository(library)),
+      seed: () => EntriesLoaded(library, kind: KindFilter.recipes, status: StatusFilter.forReview),
+      act: (bloc) => bloc.add(const EntriesRequested(showAll: true)),
+      skip: 1,
+      expect: () => [
+        isA<EntriesLoaded>().having((s) => s.kind, 'kind', KindFilter.all).having((s) => s.status, 'status', isNull),
+      ],
+    );
   });
 }

@@ -39,13 +39,29 @@ final class EntriesBloc extends Bloc<EntriesEvent, EntriesState> {
   /// the result of "Pokušaj ponovo").
   int _request = 0;
 
+  /// The filters to put back after a load. Loading and failure carry no list, so they cannot hold them.
+  KindFilter _kind = KindFilter.all;
+  StatusFilter? _status;
+
+  void _rememberFilters({required bool showAll}) {
+    final current = state;
+    if (showAll) {
+      _kind = KindFilter.all;
+      _status = null;
+    } else if (current is EntriesLoaded) {
+      _kind = current.kind;
+      _status = current.status;
+    }
+  }
+
   Future<void> _onRequested(EntriesRequested event, Emitter<EntriesState> emit) async {
     final request = ++_request;
+    _rememberFilters(showAll: event.showAll);
     emit(const EntriesLoading());
     try {
       final entries = await loadMyEntries(user);
       if (request != _request) return;
-      emit(entries.isEmpty ? const EntriesEmpty() : _loaded(entries));
+      emit(entries.isEmpty ? const EntriesEmpty() : _loaded(entries, kind: _kind, status: _status));
     } on Exception catch (cause) {
       if (request != _request) return;
       emit(EntriesFailure(cause));

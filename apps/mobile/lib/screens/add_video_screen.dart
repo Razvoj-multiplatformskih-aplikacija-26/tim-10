@@ -44,7 +44,7 @@ class _AddVideoScreenState extends State<AddVideoScreen> {
               ? 'Ovaj video je već analiziran. Rezultat je odmah tu.'
               : 'Analiziramo video. Javićemo kad bude gotovo.',
         );
-        context.read<EntriesBloc>().add(const EntriesRequested());
+        context.read<EntriesBloc>().add(const EntriesRequested(showAll: true));
         context.pop();
       case SubmitRejected(:final error):
         show(domainErrorText(error, now: context.read<AppDependencies>().clock.now()));
