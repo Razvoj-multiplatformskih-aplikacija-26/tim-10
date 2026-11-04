@@ -16,15 +16,19 @@ class EntryNotices extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocListener<EntriesBloc, EntriesState>(
-      listenWhen: (previous, current) => current is EntriesLoaded && current.notice != null,
+      listenWhen: (previous, current) => _noticeOf(current) != null,
       listener: _show,
       child: child,
     );
   }
 
+  EntriesNotice? _noticeOf(EntriesState state) => switch (state) {
+    EntriesLoaded(:final notice) || EntriesEmpty(:final notice) => notice,
+    EntriesLoading() || EntriesFailure() => null,
+  };
+
   void _show(BuildContext context, EntriesState state) {
-    if (state is! EntriesLoaded) return;
-    final notice = state.notice;
+    final notice = _noticeOf(state);
     if (notice == null) return;
 
     final bloc = context.read<EntriesBloc>();

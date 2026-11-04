@@ -39,13 +39,29 @@ final class EntriesBloc extends Bloc<EntriesEvent, EntriesState> {
   /// the result of "Pokušaj ponovo").
   int _request = 0;
 
+  /// The filters to put back after a load. Loading and failure carry no list, so they cannot hold them.
+  KindFilter _kind = KindFilter.all;
+  StatusFilter? _status;
+
+  void _rememberFilters({required bool showAll}) {
+    final current = state;
+    if (showAll) {
+      _kind = KindFilter.all;
+      _status = null;
+    } else if (current is EntriesLoaded) {
+      _kind = current.kind;
+      _status = current.status;
+    }
+  }
+
   Future<void> _onRequested(EntriesRequested event, Emitter<EntriesState> emit) async {
     final request = ++_request;
+    _rememberFilters(showAll: event.showAll);
     emit(const EntriesLoading());
     try {
       final entries = await loadMyEntries(user);
       if (request != _request) return;
-      emit(entries.isEmpty ? const EntriesEmpty() : _loaded(entries));
+      emit(_listOf(entries, kind: _kind, status: _status));
     } on Exception catch (cause) {
       if (request != _request) return;
       emit(EntriesFailure(cause));
@@ -68,7 +84,7 @@ final class EntriesBloc extends Bloc<EntriesEvent, EntriesState> {
         case Success(:final value):
           final entries = await loadMyEntries(user);
           emit(
-            _loaded(
+            _listOf(
               entries,
               kind: current.kind,
               status: current.status,
@@ -93,13 +109,21 @@ final class EntriesBloc extends Bloc<EntriesEvent, EntriesState> {
     emit(current.withFilters(kind: current.kind, status: status));
   }
 
-  /// A fresh list keeps the filters the user picked.
-  EntriesLoaded _loaded(
+  /// A fresh list keeps the filters the user picked. The empty state shows no filters, so it also forgets them:
+  /// one the user cannot see must not hide their first new entry.
+  EntriesState _listOf(
     List<Entry> entries, {
-    KindFilter kind = KindFilter.all,
-    StatusFilter? status,
+    required KindFilter kind,
+    required StatusFilter? status,
     EntriesNotice? notice,
-  }) => EntriesLoaded(entries, actions: _allowedActions(entries), kind: kind, status: status, notice: notice);
+  }) {
+    if (entries.isEmpty) {
+      _kind = KindFilter.all;
+      _status = null;
+      return EntriesEmpty(notice: notice);
+    }
+    return EntriesLoaded(entries, actions: _allowedActions(entries), kind: kind, status: status, notice: notice);
+  }
 
   /// Which buttons each card shows. The domain answers by trying each action; the screen decides nothing.
   /// A retry over the daily limit still shows the button: the limit is checked when it is tapped (R2).
@@ -127,6 +151,8 @@ final class EntriesBloc extends Bloc<EntriesEvent, EntriesState> {
     final current = state;
     if (current is EntriesLoaded && current.notice != null) {
       emit(current.withoutNotice());
+    } else if (current is EntriesEmpty && current.notice != null) {
+      emit(const EntriesEmpty());
     }
   }
 }

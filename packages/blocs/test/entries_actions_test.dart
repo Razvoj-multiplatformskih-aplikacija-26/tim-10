@@ -157,6 +157,42 @@ void main() {
       act: (bloc) => bloc.add(const EntriesNoticeAcknowledged()),
       expect: () => [EntriesLoaded(library)],
     );
+
+    blocTest<EntriesBloc, EntriesState>(
+      'deleting the last entry leads to the empty state and still says so',
+      build: () => blocWith(InMemoryEntryRepository([awaiting])),
+      seed: () => EntriesLoaded([awaiting]),
+      act: (bloc) => bloc.add(const EntryActionRequested(EntryAction.delete, EntryId('e-1'))),
+      skip: 1,
+      expect: () => [isA<EntriesEmpty>().having((s) => s.notice, 'notice', isA<EntryActionSucceeded>())],
+    );
+
+    blocTest<EntriesBloc, EntriesState>(
+      'acknowledging the notice on the empty state clears it',
+      build: () => blocWith(InMemoryEntryRepository(const [])),
+      seed: () => EntriesEmpty(notice: EntryActionSucceeded(EntryAction.delete, awaiting)),
+      act: (bloc) => bloc.add(const EntriesNoticeAcknowledged()),
+      expect: () => [const EntriesEmpty()],
+    );
+
+    test('filters from before the empty state do not hide the first new entry', () async {
+      final repository = InMemoryEntryRepository([awaiting]);
+      final bloc = blocWith(repository)..add(const EntriesRequested());
+      await bloc.stream.firstWhere((state) => state is EntriesLoaded);
+      bloc.add(const EntriesStatusFilterToggled(StatusFilter.forReview));
+      await bloc.stream.first;
+      bloc.add(const EntriesRequested());
+      await bloc.stream.firstWhere((state) => state is EntriesLoaded);
+
+      bloc.add(const EntryActionRequested(EntryAction.delete, EntryId('e-1')));
+      await bloc.stream.firstWhere((state) => state is EntriesEmpty);
+      await repository.save(analyzing);
+      bloc.add(const EntriesRequested());
+      final loaded = await bloc.stream.firstWhere((state) => state is EntriesLoaded) as EntriesLoaded;
+
+      expect(loaded.status, isNull);
+      await bloc.close();
+    });
   });
 }
 

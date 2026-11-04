@@ -24,7 +24,9 @@ class EntryDetailScreen extends StatelessWidget {
     return BlocConsumer<EntriesBloc, EntriesState>(
       // The entry was here and is gone: it has just been deleted, so back to the library.
       listenWhen: (previous, current) =>
-          _entryIn(previous) != null && current is EntriesLoaded && _entryIn(current) == null,
+          _entryIn(previous) != null &&
+          (current is EntriesLoaded || current is EntriesEmpty) &&
+          _entryIn(current) == null,
       listener: (context, state) => context.pop(),
       builder: (context, state) => switch (state) {
         EntriesLoading() => const _Frame(
