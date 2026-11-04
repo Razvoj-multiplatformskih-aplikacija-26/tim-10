@@ -59,7 +59,7 @@ Otvoren predlog je u adresi (`/queue?entry=p-3`), pa preživljava osvežavanje s
 
 ```bash
 cd apps/backoffice
-flutter run -d macos   # ili -d windows, -d chrome
+flutter run -d windows   # ili -d chrome
 ```
 
 | Taster | Radnja |
